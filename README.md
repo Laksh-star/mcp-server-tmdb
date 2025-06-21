@@ -5,6 +5,7 @@ This MCP server integrates with The Movie Database (TMDB) API to provide movie i
 
 <a href="https://glama.ai/mcp/servers/g3nl1a0n25"><img width="380" height="200" src="https://glama.ai/mcp/servers/g3nl1a0n25/badge" alt="mcp-server-tmdb MCP server" /></a>
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Laksh-star/mcp-server-tmdb)
 # Prerequisites
 
 Before installing and running the TMDB MCP server, ensure you have the following prerequisites installed and configured:
