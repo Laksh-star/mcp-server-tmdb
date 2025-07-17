@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/laksh-star-mcp-server-tmdb-badge.png)](https://mseep.ai/app/laksh-star-mcp-server-tmdb)
+
 # TMDB MCP Server
 
 [![smithery badge](https://smithery.ai/badge/@Laksh-star/mcp-server-tmdb)](https://smithery.ai/server/@Laksh-star/mcp-server-tmdb)
