@@ -6,11 +6,11 @@ This MCP server integrates with The Movie Database (TMDB) API to provide movie i
 <a href="https://glama.ai/mcp/servers/g3nl1a0n25"><img width="380" height="200" src="https://glama.ai/mcp/servers/g3nl1a0n25/badge" alt="mcp-server-tmdb MCP server" /></a>
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Laksh-star/mcp-server-tmdb)
-# Prerequisites
+## Prerequisites
 
 Before installing and running the TMDB MCP server, ensure you have the following prerequisites installed and configured:
 
-## Required Software
+### Required software
 
 - **Node.js**
   - Version 18.0.0 or higher
@@ -26,29 +26,29 @@ Before installing and running the TMDB MCP server, ensure you have the following
   - Can be installed globally: `npm install -g typescript`
   - Verify installation: `tsc --version`
 
-## Required Accounts & API Keys
+### Required accounts & API keys
 
-- **TMDB Account**
+- **TMDB account**
   - Free account at [TMDB](https://www.themoviedb.org/)
   - API key from TMDB dashboard
   - API access must be approved by TMDB
 
-- **Claude Desktop Application**
+- **Claude desktop application**
   - Latest version installed
   - Access to modify configuration files
 
-## System Requirements
+### System requirements
 
-- **Operating Systems**
+- **Operating systems**
   - macOS (10.15 or later)
   - Linux (modern distributions)
 
-- **Hardware Requirements**
-  - Minimum 4GB RAM
+- **Hardware requirements**
+- Minimum 4GB RAM
   - 1GB free disk space
   - Stable internet connection
 
-## Development Environment
+### Development environment
 
 For the best development experience, we recommend:
 - A code editor with TypeScript support (e.g., VS Code)
@@ -92,7 +92,7 @@ The server provides access to TMDB movie information:
     - Selected reviews
   - All data is returned in JSON format
 
-  ## Getting Started
+## Getting started
 
 1. Get a TMDB API key:
    - Sign up at [TMDB](https://www.themoviedb.org/)
@@ -136,7 +136,7 @@ To integrate this server with Claude Desktop, add the following to your app's se
 
 Replace `/full/path/to` with the actual path to your project directory.
 
-## Installing via Smithery
+### Installing via Smithery
 
 To install TMDB Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@Laksh-star/mcp-server-tmdb):
 
@@ -144,7 +144,7 @@ To install TMDB Server for Claude Desktop automatically via [Smithery](https://s
 npx -y @smithery/cli install @Laksh-star/mcp-server-tmdb --client claude
 ```
 
-## Example Usage
+## Example usage
 
 Once the server is running with Claude Desktop, you can use commands like:
 
@@ -169,7 +169,7 @@ Once the server is running with Claude Desktop, you can use commands like:
    "Tell me about the movie with ID 550"
    ```
 
-## Error Handling
+## Error handling
 
 The server includes comprehensive error handling for:
 - Invalid API keys
