@@ -1,4 +1,3 @@
-cat > src/server-http.js << 'EOF'
 #!/usr/bin/env node
 
 import express from "express";
@@ -198,4 +197,3 @@ app.listen(PORT, () => {
   console.log(`TMDB MCP Server running on port ${PORT}`);
   console.log(`MCP endpoint: http://localhost:${PORT}/mcp`);
 });
-EOF
