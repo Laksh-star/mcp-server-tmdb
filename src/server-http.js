@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import fetch from 'node-fetch';
 import express from 'express';
@@ -27,17 +27,31 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: [
       {
-        name: 'search_movies',
-        description: 'Search for movies by title or keywords',
+        name: 'search',
+        description: 'Search for movies by title or keywords using TMDB',
         inputSchema: {
           type: 'object',
           properties: {
             query: {
               type: 'string',
-              description: 'Search query',
+              description: 'Search query for movies',
             },
           },
           required: ['query'],
+        },
+      },
+      {
+        name: 'fetch',
+        description: 'Fetch detailed information about a specific movie by ID',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            movieId: {
+              type: 'string',
+              description: 'TMDB movie ID to fetch details for',
+            },
+          },
+          required: ['movieId'],
         },
       },
       {
@@ -83,9 +97,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   try {
     switch (name) {
-      case 'search_movies': {
+      case 'search': {
         const response = await fetch(
           `https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${encodeURIComponent(args.query)}`
+        );
+        const data = await response.json();
+        return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+      }
+      
+      case 'fetch': {
+        const response = await fetch(
+          `https://api.themoviedb.org/3/movie/${args.movieId}?api_key=${apiKey}`
         );
         const data = await response.json();
         return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
@@ -115,26 +137,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 });
 
-// Create SSE transport
-const transport = new SSEServerTransport('/messages', server);
-
-// Set up routes
-app.get('/sse', async (req, res) => {
-  return transport.handleSSEConnection(req, res);
-});
-
-app.post('/messages', async (req, res) => {
-  return transport.handlePostRequest(req, res);
-});
+const transport = new StreamableHTTPServerTransport(app, server);
 
 app.get('/', (req, res) => {
   res.json({ 
     name: 'TMDB MCP Server',
     version: '1.0.0',
     status: 'running',
+    transport: 'streamable-http',
     endpoints: {
-      sse: '/sse',
-      messages: '/messages'
+      mcp: '/mcp'
     }
   });
 });
@@ -142,6 +154,5 @@ app.get('/', (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`TMDB MCP Server running on port ${PORT}`);
-  console.log(`SSE endpoint: http://localhost:${PORT}/sse`);
-  console.log(`Messages endpoint: http://localhost:${PORT}/messages`);
+  console.log(`MCP endpoint: http://localhost:${PORT}/mcp`);
 });
