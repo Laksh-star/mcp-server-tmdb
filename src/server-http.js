@@ -1,16 +1,22 @@
+cat > src/server-http.js << 'EOF'
 #!/usr/bin/env node
 
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import express from "express";
+import { randomUUID } from "node:crypto";
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import fetch from 'node-fetch';
-import express from 'express';
 import cors from 'cors';
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Map to store transports by session ID
+const transports = {};
+
+// Create MCP Server
 const server = new Server(
   {
     name: 'mcp-server-tmdb',
@@ -23,6 +29,7 @@ const server = new Server(
   }
 );
 
+// Required tools for ChatGPT
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: [
@@ -137,8 +144,43 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 });
 
-const transport = new StreamableHTTPServerTransport(app, server);
+// Handle POST requests for client-to-server communication
+app.post('/mcp', async (req, res) => {
+  const sessionId = req.headers['mcp-session-id'] || randomUUID();
+  
+  let transport;
+  if (transports[sessionId]) {
+    transport = transports[sessionId];
+  } else {
+    transport = new StreamableHTTPServerTransport(server);
+    transports[sessionId] = transport;
+  }
+  
+  // Set session ID in response header
+  res.setHeader('Mcp-Session-Id', sessionId);
+  
+  await transport.handlePostRequest(req, res);
+});
 
+// Handle GET requests for server-to-client streaming
+app.get('/mcp', async (req, res) => {
+  const sessionId = req.headers['mcp-session-id'] || randomUUID();
+  
+  let transport;
+  if (transports[sessionId]) {
+    transport = transports[sessionId];
+  } else {
+    transport = new StreamableHTTPServerTransport(server);
+    transports[sessionId] = transport;
+  }
+  
+  // Set session ID in response header
+  res.setHeader('Mcp-Session-Id', sessionId);
+  
+  await transport.handleGetRequest(req, res);
+});
+
+// Status endpoint
 app.get('/', (req, res) => {
   res.json({ 
     name: 'TMDB MCP Server',
@@ -156,3 +198,4 @@ app.listen(PORT, () => {
   console.log(`TMDB MCP Server running on port ${PORT}`);
   console.log(`MCP endpoint: http://localhost:${PORT}/mcp`);
 });
+EOF
