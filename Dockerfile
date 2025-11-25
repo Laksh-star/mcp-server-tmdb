@@ -16,6 +16,8 @@ COPY tsconfig.json ./
 COPY src ./src
 RUN npm run build
 
+ENV HOST=0.0.0.0
+
 # Bundle app source
 # Expose a volume if necessary, but here we assume a command line tool
 

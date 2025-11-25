@@ -119,6 +119,24 @@ The server provides access to TMDB movie information:
    export TMDB_API_KEY=your_api_key_here
    ```
 
+### Usage with Streamable HTTP Transport
+
+The server supports streamable HTTP transport for web-based integrations:
+
+```bash
+npm run start:http
+```
+
+This starts the server on port 3000 (configurable via PORT environment variable). The MCP endpoint is available at `http://localhost:3000/mcp`.
+
+**Endpoints:**
+- `GET /` - Server status and information
+- `POST /mcp` - Client-to-server communication
+- `GET /mcp` - Server-to-client streaming (with session management)
+
+**Session Management:**
+Sessions are managed via the `Mcp-Session-Id` header. If not provided, a new session ID is generated.
+
 ### Usage with Claude Desktop
 
 To integrate this server with Claude Desktop, add the following to your app's server configuration file (located at `~/Library/Application Support/Claude/config.json`):

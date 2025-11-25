@@ -6,7 +6,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc && shx chmod +x dist/*.js",
     "prepare": "npm run build",
-    "watch": "tsc --watch"
+    "watch": "tsc --watch",
+    "start:http": "node dist/http-server.js"
   },
   "keywords": [],
   "author": "",
@@ -14,16 +15,21 @@
   "description": "",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.3",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
   },
   "devDependencies": {
     "@types/node": "^22.10.1",
     "@types/node-fetch": "^2.6.12",
+    "@types/express": "^4.17.21",
+    "@types/cors": "^2.8.17",
     "shx": "^0.3.4",
     "typescript": "^5.7.2"
   },
   "type": "module",
   "bin": {
-    "mcp-server-tmdb": "dist/index.js"
+    "mcp-server-tmdb": "dist/index.js",
+    "mcp-server-tmdb-http": "dist/http-server.js"
   }
 }
