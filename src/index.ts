@@ -5,11 +5,16 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import fetch from 'node-fetch';
 import https from 'https';
 import dns from 'dns';
+import { constants as cryptoConstants } from 'crypto';
 
 // Apple Container VMs have no IPv6 routing — node-fetch hangs when it tries IPv6 first.
-// Force IPv4-first DNS resolution and TLS 1.2 (CloudFront rejects TLS 1.3 in some envs).
+// Force IPv4-first DNS. Also, TMDB's CloudFront rejects TLS 1.3 from OpenSSL 3.x Linux
+// environments. maxVersion alone is insufficient; SSL_OP_NO_TLSv1_3 must be set explicitly.
 dns.setDefaultResultOrder('ipv4first');
-const tmdbAgent = new https.Agent({ maxVersion: 'TLSv1.2' });
+const tmdbAgent = new https.Agent({
+  maxVersion: 'TLSv1.2',
+  secureOptions: cryptoConstants.SSL_OP_NO_TLSv1_3,
+});
 import {
   CallToolRequestSchema,
   ListResourcesRequestSchema,
@@ -129,7 +134,10 @@ interface WatchProvidersResponse {
 }
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
-const TMDB_BASE_URL = "https://api.themoviedb.org/3";
+// TMDB_BASE_URL can be overridden to proxy through the host (avoids CloudFront routing issues
+// in Apple Container VMs where direct connections are unreliable).
+const TMDB_BASE_URL_OVERRIDE = process.env.TMDB_BASE_URL;
+const TMDB_BASE_URL = TMDB_BASE_URL_OVERRIDE || "https://api.themoviedb.org/3";
 
 const server = new Server(
   {
