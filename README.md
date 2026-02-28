@@ -1,78 +1,60 @@
 # TMDB MCP Server
 
-This MCP server integrates with The Movie Database (TMDB) API to provide movie information, search capabilities, and recommendations.
+An MCP server that integrates with The Movie Database (TMDB) API. Provides movie and TV search, streaming availability, cast/crew details, and recommendations — designed for use with AI assistants like Claude.
 
-## Features
+## Tools
 
-### Tools
+### Movie Discovery
+- **search_movies** — Search by title/keywords → titles, IDs, ratings, overviews
+- **get_trending** — Top 10 trending movies (`timeWindow`: "day" | "week")
+- **search_by_genre** — Movies by genre name, optional year filter
+- **advanced_search** — Filter by genre, year, min rating, sort, language
+- **search_by_keyword** — Find movies by theme/keyword (e.g. "zombie", "heist")
 
-- **search_movies**
-  - Search for movies by title or keywords
-  - Input: `query` (string): Search query
-  - Returns: List of movies with titles, release years, IDs, ratings, and overviews
-  - Example: Search for movies about space exploration
+### Movie Details
+- **get_movie_details** — Full details: cast, crew, runtime, genres, reviews (by `movieId`)
+- **get_recommendations** — Top 5 recommendations based on a movie ID
+- **get_similar_movies** — Similar movies via TMDB's similarity algorithm
+- **get_watch_providers** — Streaming/rental/purchase availability by country (default: IN)
 
-- **get_recommendations**
-  - Get movie recommendations based on a movie ID
-  - Input: `movieId` (string): TMDB movie ID
-  - Returns: Top 5 recommended movies with details
-  - Example: Get recommendations based on movie ID 550 (Fight Club)
+### TV Shows
+- **search_tv_shows** — Search TV series by title
+- **get_trending_tv** — Top 10 trending TV shows (`timeWindow`: "day" | "week")
 
-- **get_trending**
-  - Get trending movies for a specified time window
-  - Input: `timeWindow` (string): Either "day" or "week"
-  - Returns: Top 10 trending movies with details
-  - Example: Get today's trending movies
+### People
+- **search_person** — Find actors, directors, crew by name → ID + known works
+- **get_person_details** — Full bio + filmography (movies + TV) by `personId`
 
 ### Resources
+- `tmdb:///movie/<id>` — Full movie details in JSON (title, cast, director, reviews, poster URL)
 
-The server provides access to TMDB movie information:
+## Getting Started
 
-- **Movies** (`tmdb:///movie/<movie_id>`)
-  - Comprehensive movie details including:
-    - Title and release date
-    - Rating and overview
-    - Genres
-    - Poster URL
-    - Cast information (top 5 actors)
-    - Director
-    - Selected reviews
-  - All data is returned in JSON format
+1. Get a TMDB API key at [themoviedb.org](https://www.themoviedb.org/) → Account Settings → API
 
-  ## Getting Started
-
-1. Get a TMDB API key:
-   - Sign up at [TMDB](https://www.themoviedb.org/)
-   - Go to your account settings
-   - Navigate to the API section
-   - Request an API key for developer use
-
-2. Clone and set up the project:
+2. Clone and build:
    ```bash
-   git clone [repository-url]
+   git clone https://github.com/Laksh-star/mcp-server-tmdb.git
    cd mcp-server-tmdb
    npm install
-   ```
-
-3. Build the server:
-   ```bash
    npm run build
    ```
 
-4. Set up your environment variable:
+3. Set your API key:
    ```bash
    export TMDB_API_KEY=your_api_key_here
    ```
 
-### Usage with Claude Desktop
+## Usage with Claude Desktop
 
-To integrate this server with Claude Desktop, add the following to your app's server configuration file (located at `~/Library/Application Support/Claude/config.json`):
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ```json
 {
   "mcpServers": {
     "tmdb": {
-      "command": "/full/path/to/dist/index.js",
+      "command": "node",
+      "args": ["/full/path/to/mcp-server-tmdb/dist/index.js"],
       "env": {
         "TMDB_API_KEY": "your_api_key_here"
       }
@@ -81,54 +63,22 @@ To integrate this server with Claude Desktop, add the following to your app's se
 }
 ```
 
-Replace `/full/path/to` with the actual path to your project directory.
+## Usage with BizClaw / NanoClaw
 
-## Example Usage
+Built into the agent container. Just set `TMDB_API_KEY` in your `.env` file — no configuration needed.
 
-Once the server is running with Claude Desktop, you can use commands like:
+## Example Prompts
 
-1. Search for movies:
-   ```
-   "Search for movies about artificial intelligence"
-   ```
-
-2. Get trending movies:
-   ```
-   "What are the trending movies today?"
-   "Show me this week's trending movies"
-   ```
-
-3. Get movie recommendations:
-   ```
-   "Get movie recommendations based on movie ID 550"
-   ```
-
-4. Get movie details:
-   ```
-   "Tell me about the movie with ID 550"
-   ```
-
-## Error Handling
-
-The server includes comprehensive error handling for:
-- Invalid API keys
-- Network errors
-- Invalid movie IDs
-- Malformed requests
-
-Error messages will be returned in a user-friendly format through Claude Desktop.
-
-## Development
-
-To watch for changes during development:
-```bash
-npm run watch
+```
+"What's trending in movies this week?"
+"Find me Thriller movies from 2023"
+"Who is Christopher Nolan and what has he directed?"
+"Where can I watch Inception in India?"
+"Get details for movie ID 550 (Fight Club)"
+"Find movies similar to Interstellar"
+"What are the trending TV shows right now?"
 ```
 
 ## License
 
-This MCP server is licensed under the MIT License. See the LICENSE file for details.
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+MIT
