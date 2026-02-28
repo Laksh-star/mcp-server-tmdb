@@ -417,6 +417,24 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ["movieId"],
         },
       },
+      {
+        name: "get_now_playing",
+        description: "Get movies currently playing in theaters. Returns titles, ratings, release dates, and overviews for movies now in cinemas.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            region: {
+              type: "string",
+              description: "ISO 3166-1 country code to filter theatrical releases (e.g. IN, US, GB). Defaults to IN.",
+            },
+            page: {
+              type: "number",
+              description: "Page number for pagination (default: 1)",
+            },
+          },
+          required: [],
+        },
+      },
     ],
   };
 });
@@ -860,6 +878,33 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [{
             type: "text",
             text: `Similar movies:\n\n${similar}`,
+          }],
+          isError: false,
+        };
+      }
+
+      case "get_now_playing": {
+        const region = (request.params.arguments?.region as string) || "IN";
+        const page = (request.params.arguments?.page as number) || 1;
+        const data = await fetchFromTMDB<TMDBResponse>("/movie/now_playing", { region, page: String(page) });
+
+        const movies = data.results
+          .slice(0, 15)
+          .map((movie) =>
+            `${movie.title} (${movie.release_date?.split("-")[0]}) - ID: ${movie.id}\n` +
+            `Rating: ${movie.vote_average}/10\n` +
+            `Overview: ${movie.overview}\n`
+          )
+          .join("\n---\n");
+
+        const dateRange = (data as any).dates
+          ? ` (from ${(data as any).dates.minimum} to ${(data as any).dates.maximum})`
+          : "";
+
+        return {
+          content: [{
+            type: "text",
+            text: `Movies now playing in theaters${dateRange}:\n\n${movies}`,
           }],
           isError: false,
         };
