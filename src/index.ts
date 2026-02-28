@@ -3,6 +3,13 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import fetch from 'node-fetch';
+import https from 'https';
+import dns from 'dns';
+
+// Apple Container VMs have no IPv6 routing — node-fetch hangs when it tries IPv6 first.
+// Force IPv4-first DNS resolution and TLS 1.2 (CloudFront rejects TLS 1.3 in some envs).
+dns.setDefaultResultOrder('ipv4first');
+const tmdbAgent = new https.Agent({ maxVersion: 'TLSv1.2' });
 import {
   CallToolRequestSchema,
   ListResourcesRequestSchema,
@@ -144,7 +151,7 @@ async function fetchFromTMDB<T>(endpoint: string, params: Record<string, string>
     url.searchParams.append(key, value);
   }
 
-  const response = await fetch(url.toString());
+  const response = await fetch(url.toString(), { agent: tmdbAgent });
   if (!response.ok) {
     throw new Error(`TMDB API error: ${response.statusText}`);
   }
