@@ -1,0 +1,41 @@
+{
+  "name": "tmdb",
+  "version": "1.0.0",
+  "description": "Repo-local Codex plugin for the TMDB MCP server in this workspace.",
+  "author": {
+    "name": "Laksh-star",
+    "url": "https://github.com/Laksh-star"
+  },
+  "homepage": "https://github.com/Laksh-star/mcp-server-tmdb",
+  "repository": "https://github.com/Laksh-star/mcp-server-tmdb",
+  "license": "MIT",
+  "keywords": [
+    "tmdb",
+    "movies",
+    "tv",
+    "mcp",
+    "entertainment"
+  ],
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "TMDB",
+    "shortDescription": "Movie and TV discovery through the local TMDB MCP server",
+    "longDescription": "Use this workspace plugin to connect Codex to the TMDB MCP server in this repo for movie discovery, TV search, people lookup, recommendations, and watch-provider data.",
+    "developerName": "Laksh-star",
+    "category": "Entertainment",
+    "capabilities": [
+      "Interactive",
+      "Read"
+    ],
+    "websiteURL": "https://github.com/Laksh-star/mcp-server-tmdb",
+    "defaultPrompt": [
+      "What movies are trending this week?",
+      "Find sci-fi movies from 2023 rated above 7",
+      "Where can I watch Inception in India?"
+    ],
+    "brandColor": "#0F766E",
+    "composerIcon": "./assets/tmdb.svg",
+    "logo": "./assets/tmdb.svg",
+    "screenshots": []
+  }
+}

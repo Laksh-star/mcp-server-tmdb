@@ -1,0 +1,20 @@
+{
+  "name": "workspace-local",
+  "interface": {
+    "displayName": "Workspace Plugins"
+  },
+  "plugins": [
+    {
+      "name": "tmdb",
+      "source": {
+        "source": "local",
+        "path": "./plugins/tmdb"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Entertainment"
+    }
+  ]
+}

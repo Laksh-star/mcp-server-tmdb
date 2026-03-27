@@ -1,6 +1,6 @@
 # TMDB MCP Server
 
-An MCP server that integrates with The Movie Database (TMDB) API. Provides movie and TV search, streaming availability, cast/crew details, and recommendations — designed for use with AI assistants like Claude.
+An MCP server for The Movie Database (TMDB) API. It provides movie and TV search, streaming availability, cast and crew details, and recommendations for assistants such as Codex and Claude Desktop.
 
 ## Tools
 
@@ -28,40 +28,106 @@ An MCP server that integrates with The Movie Database (TMDB) API. Provides movie
 ### Resources
 - `tmdb:///movie/<id>` — Full movie details in JSON (title, cast, director, reviews, poster URL)
 
-## Getting Started
+## Quick Start
 
 1. Get a TMDB API key at [themoviedb.org](https://www.themoviedb.org/) → Account Settings → API
 
-2. Clone and build:
+2. Clone, install, and build:
    ```bash
    git clone https://github.com/Laksh-star/mcp-server-tmdb.git
    cd mcp-server-tmdb
    npm install
-   npm run build
    ```
 
-3. Set your API key:
+3. Create a local env file and add your TMDB key:
    ```bash
-   export TMDB_API_KEY=your_api_key_here
+   cp .env.example .env
    ```
+
+4. Install the local Codex and Claude Desktop integration:
+   ```bash
+   npm run install:local
+   ```
+
+5. Restart Codex or Claude Desktop if already open.
+
+6. Verify with a prompt like:
+   ```text
+   What movies are trending this week?
+   ```
+
+In Codex, a fresh session should show `TMDB` in the plugin list and expose the `mcp__tmdb__` namespace.
+
+## What `npm run install:local` does
+
+The installer uses the repo-owned launcher at `plugins/tmdb/scripts/run-server.sh`.
+
+For Codex it:
+
+- Registers the launcher as an MCP server
+- Installs a local `TMDB` plugin payload so it appears in the plugin UI
+
+For Claude Desktop it:
+
+- Registers the same launcher as a local MCP server
+
+It updates:
+
+- `~/.codex/config.toml`
+- `~/.codex/.tmp/plugins/.agents/plugins/marketplace.json`
+- `~/.codex/plugins/cache/openai-curated/tmdb/...`
+- `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+The launcher reads `TMDB_API_KEY` from your shell environment or from the repo `.env` file.
 
 ## Usage with Claude Desktop
 
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+If you prefer manual setup, add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ```json
 {
   "mcpServers": {
-    "tmdb": {
-      "command": "node",
-      "args": ["/full/path/to/mcp-server-tmdb/dist/index.js"],
-      "env": {
-        "TMDB_API_KEY": "your_api_key_here"
-      }
+    "tmdb-local": {
+      "command": "/full/path/to/mcp-server-tmdb/plugins/tmdb/scripts/run-server.sh",
+      "args": []
     }
   }
 }
 ```
+
+Restart Claude Desktop after editing the config.
+
+## Usage with Codex
+
+The installer adds these blocks to `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.tmdb_local]
+command = "/full/path/to/mcp-server-tmdb/plugins/tmdb/scripts/run-server.sh"
+
+[plugins."tmdb@openai-curated"]
+enabled = true
+```
+
+Restart Codex after editing the config. In a fresh Codex session, `TMDB` should appear in the plugin list and contribute the `mcp__tmdb__` namespace.
+
+## Validation
+
+Offline smoke test:
+
+```bash
+TMDB_API_KEY=dummy node plugins/tmdb/scripts/smoke-test.mjs
+```
+
+Online smoke test:
+
+```bash
+set -a && source ./.env && set +a && node plugins/tmdb/scripts/smoke-test.mjs --online
+```
+
+## Plugin Docs
+
+For plugin packaging, local install behavior, and Codex-specific notes, see `plugins/tmdb/README.md`.
 
 ## Usage with BizClaw / NanoClaw
 

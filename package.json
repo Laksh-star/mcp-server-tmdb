@@ -6,7 +6,9 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc && shx chmod +x dist/*.js",
     "prepare": "npm run build",
-    "watch": "tsc --watch"
+    "watch": "tsc --watch",
+    "install:local": "node plugins/tmdb/scripts/install-local-integrations.mjs",
+    "smoke:plugin": "node plugins/tmdb/scripts/smoke-test.mjs"
   },
   "keywords": [],
   "author": "",
