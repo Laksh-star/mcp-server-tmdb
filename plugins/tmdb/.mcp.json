@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "tmdb": {
+      "command": "./scripts/run-server.sh",
+      "args": [],
+      "note": "Repo-local TMDB MCP server. The launcher reads TMDB_API_KEY from the environment or from the repo .env file."
+    }
+  }
+}
