@@ -26,20 +26,22 @@ Mobile layout:
 Browser app:
 
 ```text
-https://tmdb-mcp.movcro5.workers.dev/
+https://tmdb-mcp.<your-workers-subdomain>.workers.dev/
 ```
 
 Remote MCP endpoint:
 
 ```text
-https://tmdb-mcp.movcro5.workers.dev/mcp
+https://tmdb-mcp.<your-workers-subdomain>.workers.dev/mcp
 ```
 
 Health check:
 
 ```text
-https://tmdb-mcp.movcro5.workers.dev/health
+https://tmdb-mcp.<your-workers-subdomain>.workers.dev/health
 ```
+
+Do not commit personal deployment URLs for public repos. Keep the concrete Worker URL in local notes or your Cloudflare dashboard.
 
 ## Access Token
 
@@ -141,7 +143,7 @@ npm run smoke:concierge
 Deployed concierge API:
 
 ```bash
-TMDB_MCP_ACCESS_TOKEN="$(cat .cloudflare-access-token)" node scripts/concierge-smoke.mjs https://tmdb-mcp.movcro5.workers.dev
+TMDB_MCP_ACCESS_TOKEN="$(cat .cloudflare-access-token)" node scripts/concierge-smoke.mjs https://tmdb-mcp.<your-workers-subdomain>.workers.dev
 ```
 
 Local MCP endpoint:
@@ -153,7 +155,7 @@ node scripts/remote-mcp-smoke.mjs http://127.0.0.1:8787/mcp --call-concierge
 Deployed MCP endpoint:
 
 ```bash
-TMDB_MCP_ACCESS_TOKEN="$(cat .cloudflare-access-token)" node scripts/remote-mcp-smoke.mjs https://tmdb-mcp.movcro5.workers.dev/mcp --call-concierge
+TMDB_MCP_ACCESS_TOKEN="$(cat .cloudflare-access-token)" node scripts/remote-mcp-smoke.mjs https://tmdb-mcp.<your-workers-subdomain>.workers.dev/mcp --call-concierge
 ```
 
 Expected deployed checks:
