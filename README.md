@@ -5,6 +5,7 @@ An MCP server for The Movie Database (TMDB) API. It provides movie and TV search
 ## Tools
 
 ### Movie Discovery
+- **get_weekend_watchlist** — Ranked weekend shortlist by mood, country, language, runtime, rating, and services
 - **search_movies** — Search by title/keywords → titles, IDs, ratings, overviews
 - **get_trending** — Top 10 trending movies (`timeWindow`: "day" | "week")
 - **search_by_genre** — Movies by genre name, optional year filter
@@ -64,6 +65,10 @@ This repo can also run as a remote MCP server on Cloudflare Workers. The remote 
 
 The existing local stdio server remains unchanged for Codex and local Claude Desktop use. The Cloudflare entrypoint is `src/worker.ts`.
 
+The Worker also serves a browser demo at `/`: **Weekend Watch Concierge**. It asks for mood, country, language, runtime, rating, and streaming services, then builds a ranked movie shortlist using TMDB discovery, trending, now-playing, credits, posters, and watch-provider data.
+
+For the complete browser app, deployed Worker, access-token, and MCP handoff, see `docs/weekend-watch-concierge.md`.
+
 ### Deploy
 
 1. Log in to Cloudflare:
@@ -76,12 +81,22 @@ The existing local stdio server remains unchanged for Codex and local Claude Des
    npx wrangler secret put TMDB_API_KEY
    ```
 
-3. Check the Worker bundle:
+3. Store an access token as a Worker secret before sharing the deployment:
+   ```bash
+   npx wrangler secret put ACCESS_TOKEN
+   ```
+
+   When `ACCESS_TOKEN` is set, `POST /api/concierge` and `POST /mcp` require:
+   ```text
+   Authorization: Bearer <your-access-token>
+   ```
+
+4. Check the Worker bundle:
    ```bash
    npm run worker:dry-run
    ```
 
-4. Deploy:
+5. Deploy:
    ```bash
    npm run worker:deploy
    ```
@@ -96,6 +111,12 @@ Use this MCP endpoint in remote clients:
 
 ```text
 https://tmdb-mcp.<your-workers-subdomain>.workers.dev/mcp
+```
+
+Use this browser demo URL:
+
+```text
+https://tmdb-mcp.<your-workers-subdomain>.workers.dev/
 ```
 
 ### Connect from Claude / Cowork
@@ -131,7 +152,64 @@ For Claude Desktop versions or MCP clients that still require a local command, u
 
 ### Security note
 
-The first Cloudflare Worker version is intentionally authless for easy personal testing. Anyone who has the Worker URL can call the read-only TMDB tools and consume your TMDB API quota. Before sharing this beyond your own Claude/Cowork account, add OAuth or Cloudflare Access protection.
+If `ACCESS_TOKEN` is not configured, the Worker is authless for easy personal testing. Anyone who has the Worker URL can call the read-only TMDB tools and consume your TMDB API quota. Keep `ACCESS_TOKEN` configured or use Cloudflare Access before sharing this beyond your own accounts.
+
+## Weekend Watch Concierge
+
+Run the Worker locally:
+
+```bash
+npm run worker:dev
+```
+
+This syncs local values from `.env` into an untracked `.dev.vars` file so Wrangler can expose `TMDB_API_KEY` to the Worker during local development.
+
+For protected local testing, add `ACCESS_TOKEN` to `.env`. The browser app has an access-token field and the smoke scripts can read `ACCESS_TOKEN` or `TMDB_MCP_ACCESS_TOKEN` from the shell environment.
+
+Open:
+
+```text
+http://127.0.0.1:8787/
+```
+
+Smoke test the concierge API after the local Worker is running:
+
+```bash
+npm run smoke:concierge
+```
+
+Smoke test the remote MCP endpoint and call the agent-facing concierge tool:
+
+```bash
+node scripts/remote-mcp-smoke.mjs http://127.0.0.1:8787/mcp --call-concierge
+```
+
+For a protected deployment:
+
+```bash
+TMDB_MCP_ACCESS_TOKEN=<your-access-token> node scripts/remote-mcp-smoke.mjs https://tmdb-mcp.<your-workers-subdomain>.workers.dev/mcp --call-concierge
+```
+
+Or test a deployed Worker:
+
+```bash
+node scripts/concierge-smoke.mjs https://tmdb-mcp.<your-workers-subdomain>.workers.dev
+```
+
+The app uses:
+
+- `POST /api/concierge` for ranked movie picks
+- `GET /health` for deployment health
+- `POST /mcp` for remote MCP clients
+
+Agents can call `get_weekend_watchlist` with:
+
+- `mood`: `crowd`, `thriller`, `thoughtful`, `funny`, `family`, or `mindbend`
+- `country`: watch-provider region, for example `IN` or `US`
+- `language`: original language code, for example `en`, `hi`, `ta`, `te`, or `any`
+- `runtime`: maximum minutes, for example `120`, `150`, or `any`
+- `minRating`: minimum TMDB rating
+- `services`: preferred streaming services
 
 ## What `npm run install:local` does
 
