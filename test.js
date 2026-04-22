@@ -1,10 +1,14 @@
 import { spawn } from 'child_process';
 
+if (!process.env.TMDB_API_KEY) {
+  console.error('TMDB_API_KEY is required. Export it before running this script.');
+  process.exit(1);
+}
+
 const proc = spawn('/opt/homebrew/opt/node@22/bin/node', ['dist/index.js'], {
   cwd: '/Users/ln/mcp-server-tmdb',
   env: {
-    ...process.env,
-    TMDB_API_KEY: '72e579cb54246d5c0dda13bc885cc2e6'
+    ...process.env
   }
 });
 
