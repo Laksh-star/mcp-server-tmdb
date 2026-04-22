@@ -58,6 +58,81 @@ An MCP server for The Movie Database (TMDB) API. It provides movie and TV search
 
 In Codex, a fresh session should show `TMDB` in the plugin list and expose the `mcp__tmdb__` namespace.
 
+## Remote MCP on Cloudflare Workers
+
+This repo can also run as a remote MCP server on Cloudflare Workers. The remote server exposes the same TMDB tools at `/mcp` over Streamable HTTP, so Claude, Cowork, Claude Desktop connectors, and other remote-MCP clients can connect to a public URL.
+
+The existing local stdio server remains unchanged for Codex and local Claude Desktop use. The Cloudflare entrypoint is `src/worker.ts`.
+
+### Deploy
+
+1. Log in to Cloudflare:
+   ```bash
+   npx wrangler login
+   ```
+
+2. Store your TMDB key as a Worker secret:
+   ```bash
+   npx wrangler secret put TMDB_API_KEY
+   ```
+
+3. Check the Worker bundle:
+   ```bash
+   npm run worker:dry-run
+   ```
+
+4. Deploy:
+   ```bash
+   npm run worker:deploy
+   ```
+
+Cloudflare will print a URL like:
+
+```text
+https://tmdb-mcp.<your-workers-subdomain>.workers.dev
+```
+
+Use this MCP endpoint in remote clients:
+
+```text
+https://tmdb-mcp.<your-workers-subdomain>.workers.dev/mcp
+```
+
+### Connect from Claude / Cowork
+
+For Claude custom connectors:
+
+1. Open Claude settings: `Customize` -> `Connectors`.
+2. Click `+` -> `Add custom connector`.
+3. Use the deployed Worker MCP URL:
+   ```text
+   https://tmdb-mcp.<your-workers-subdomain>.workers.dev/mcp
+   ```
+4. Enable the connector in a conversation and ask a TMDB question, such as:
+   ```text
+   What movies are trending this week?
+   ```
+
+For Claude Desktop versions or MCP clients that still require a local command, use the `mcp-remote` proxy:
+
+```json
+{
+  "mcpServers": {
+    "tmdb-remote": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://tmdb-mcp.<your-workers-subdomain>.workers.dev/mcp"
+      ]
+    }
+  }
+}
+```
+
+### Security note
+
+The first Cloudflare Worker version is intentionally authless for easy personal testing. Anyone who has the Worker URL can call the read-only TMDB tools and consume your TMDB API quota. Before sharing this beyond your own Claude/Cowork account, add OAuth or Cloudflare Access protection.
+
 ## What `npm run install:local` does
 
 The installer uses the repo-owned launcher at `plugins/tmdb/scripts/run-server.sh`.

@@ -82,3 +82,22 @@ If the install worked, a fresh Codex session should list `TMDB` in the available
    - `Where can I watch Inception in India?`
 
 Claude Desktop should launch this repo's MCP server through `plugins/tmdb/scripts/run-server.sh`.
+
+## Remote Claude/Cowork connector
+
+For Claude, Cowork, and other clients that support remote MCP URLs, deploy the Cloudflare Worker entrypoint from the repo root instead:
+
+```bash
+npx wrangler login
+npx wrangler secret put TMDB_API_KEY
+npm run worker:dry-run
+npm run worker:deploy
+```
+
+Then add the deployed `/mcp` URL as a Claude custom connector:
+
+```text
+https://tmdb-mcp.<your-workers-subdomain>.workers.dev/mcp
+```
+
+The remote Worker is separate from this local plugin package. It is authless by default for personal testing, so add OAuth or Cloudflare Access before sharing the URL.
