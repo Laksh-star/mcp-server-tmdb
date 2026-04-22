@@ -3,10 +3,13 @@
 import { createMcpHandler } from "agents/mcp";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import { renderConciergeApp } from "./concierge-app";
+import { createWeekendConcierge } from "./concierge";
 
 interface Env {
   TMDB_API_KEY?: string;
   TMDB_BASE_URL?: string;
+  ACCESS_TOKEN?: string;
 }
 
 interface Movie {
@@ -115,6 +118,39 @@ function textResult(text: string, isError = false) {
   };
 }
 
+function securityHeaders(): HeadersInit {
+  return {
+    "cache-control": "no-store",
+    "x-content-type-options": "nosniff",
+    "referrer-policy": "no-referrer",
+  };
+}
+
+function bearerTokenFor(request: Request): string | undefined {
+  const header = request.headers.get("authorization") || "";
+  const match = header.match(/^Bearer\s+(.+)$/i);
+  return match?.[1];
+}
+
+function authorized(request: Request, env: Env): boolean {
+  if (!env.ACCESS_TOKEN) return true;
+  return bearerTokenFor(request) === env.ACCESS_TOKEN;
+}
+
+function unauthorizedResponse(): Response {
+  return Response.json(
+    { error: "Unauthorized. Provide the configured access token." },
+    {
+      status: 401,
+      headers: {
+        ...securityHeaders(),
+        "www-authenticate": "Bearer",
+        "access-control-allow-origin": "*",
+      },
+    },
+  );
+}
+
 function movieList(movies: Movie[], limit = 10): string {
   return movies
     .slice(0, limit)
@@ -135,6 +171,37 @@ function tvList(shows: TVShow[], limit = 10): string {
       `Overview: ${show.overview}`
     )
     .join("\n---\n");
+}
+
+function conciergeSummary(result: Awaited<ReturnType<typeof createWeekendConcierge>>): string {
+  const picks = result.picks
+    .map((pick, index) => {
+      const providers = pick.providers.streaming.length > 0
+        ? `Streaming: ${pick.providers.streaming.join(", ")}`
+        : "Streaming: no subscription provider found";
+      const facts = [
+        `${pick.year}`,
+        `${pick.rating.toFixed(1)}/10`,
+        pick.runtime ? `${pick.runtime} min` : null,
+        pick.genres.length > 0 ? pick.genres.slice(0, 3).join(", ") : null,
+      ].filter(Boolean).join(" | ");
+
+      return `${index + 1}. ${pick.title} - ID: ${pick.id}\n` +
+        `${facts}\n` +
+        `${providers}\n` +
+        `Why: ${pick.reasons.join("; ")}\n` +
+        `Overview: ${pick.overview}`;
+    })
+    .join("\n---\n");
+
+  const notes = result.notes.length > 0 ? `\n\nNotes:\n${result.notes.map((note) => `- ${note}`).join("\n")}` : "";
+
+  return `Weekend Watch Concierge picks\n` +
+    `Mood: ${result.mood}\n` +
+    `Country: ${result.country}\n` +
+    `Language: ${result.language}\n\n` +
+    `${picks || "No matching picks found."}` +
+    notes;
 }
 
 async function fetchFromTMDB<T>(
@@ -180,6 +247,36 @@ function createTMDBServer(env: Env): McpServer {
     name: "tmdb-cloudflare",
     version: "2.0.0",
   });
+
+  server.registerTool(
+    "get_weekend_watchlist",
+    {
+      description: "Generate a ranked movie shortlist for a weekend watch session using mood, country, language, runtime, rating, and streaming services",
+      inputSchema: {
+        mood: z
+          .enum(["crowd", "thriller", "thoughtful", "funny", "family", "mindbend"])
+          .optional()
+          .describe("Viewing mood. Defaults to crowd."),
+        country: z.string().optional().describe("ISO 3166-1 country code for watch providers, defaults to IN"),
+        language: z.string().optional().describe("Original language code such as en, hi, ta, te, ko, or any"),
+        runtime: z.string().optional().describe("Maximum runtime in minutes, or any"),
+        minRating: z.string().optional().describe("Minimum TMDB rating from 0 to 9, defaults to 6.5"),
+        services: z.array(z.string()).optional().describe("Preferred streaming services, for example Netflix or Prime Video"),
+      },
+      annotations: READ_ONLY_TOOL,
+    },
+    async ({ mood, country, language, runtime, minRating, services }) => {
+      const result = await createWeekendConcierge(env, {
+        mood,
+        country,
+        language,
+        runtime,
+        minRating,
+        services,
+      });
+      return textResult(conciergeSummary(result));
+    },
+  );
 
   server.registerTool(
     "search_movies",
@@ -580,12 +677,66 @@ export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
-    if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/health")) {
+    if (request.method === "GET" && url.pathname === "/") {
+      return new Response(renderConciergeApp(), {
+        headers: {
+          ...securityHeaders(),
+          "content-type": "text/html; charset=utf-8",
+        },
+      });
+    }
+
+    if (request.method === "GET" && url.pathname === "/health") {
       return Response.json({
         name: "tmdb-cloudflare",
         mcpEndpoint: "/mcp",
+        app: "weekend-watch-concierge",
+        hasAccessToken: Boolean(env.ACCESS_TOKEN),
         hasTMDBKey: Boolean(env.TMDB_API_KEY),
+      }, { headers: securityHeaders() });
+    }
+
+    if (request.method === "OPTIONS" && url.pathname === "/api/concierge") {
+      return new Response(null, {
+        status: 204,
+        headers: {
+          "access-control-allow-origin": "*",
+          "access-control-allow-methods": "POST, OPTIONS",
+          "access-control-allow-headers": "authorization, content-type",
+        },
       });
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/concierge") {
+      if (!authorized(request, env)) {
+        return unauthorizedResponse();
+      }
+
+      try {
+        const input = await request.json().catch(() => ({}));
+        const result = await createWeekendConcierge(env, input as Record<string, unknown>);
+        return Response.json(result, {
+          headers: {
+            ...securityHeaders(),
+            "access-control-allow-origin": "*",
+          },
+        });
+      } catch (error) {
+        return Response.json(
+          { error: error instanceof Error ? error.message : "Unable to generate concierge picks." },
+          {
+            status: 500,
+            headers: {
+              ...securityHeaders(),
+              "access-control-allow-origin": "*",
+            },
+          },
+        );
+      }
+    }
+
+    if (url.pathname === "/mcp" && !authorized(request, env)) {
+      return unauthorizedResponse();
     }
 
     const server = createTMDBServer(env);
