@@ -1,7 +1,13 @@
 node_modules/
 dist/
+dist-worker/
+.wrangler/
 .env
+.dev.vars
+.cloudflare-access-token
 *.log
+LOCAL_PLUGIN_NOTES.md
+CLOUDFLARE_REMOTE_MCP_NOTES.md
 
 # API key test file (contains sensitive data)
 test_api_key.py
