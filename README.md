@@ -87,6 +87,8 @@ The existing local stdio server remains unchanged for Codex and local Claude Des
 
 The Worker also serves a browser demo at `/`: **Weekend Watch Concierge**. It asks for mood, country, language, runtime, rating, and streaming services, then builds a ranked movie shortlist using TMDB discovery, trending, now-playing, credits, posters, and watch-provider data.
 
+![Weekend Watch Concierge weekly trend scan](docs/assets/weekend-watch-concierge-weekly-trends.png)
+
 For the complete browser app, deployed Worker, access-token, and MCP handoff, see `docs/weekend-watch-concierge.md`.
 
 ### Deploy
