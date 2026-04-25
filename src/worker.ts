@@ -30,6 +30,25 @@ interface Movie {
   };
 }
 
+interface WeeklyTrendingMovie {
+  id: number;
+  title: string;
+  year: string;
+  rating: number;
+}
+
+interface WeeklyTrendingLanguageGroup {
+  label: string;
+  code: string;
+  movies: WeeklyTrendingMovie[];
+}
+
+interface WeeklyTrendingLanguageResult {
+  generatedAt: string;
+  source: string;
+  groups: WeeklyTrendingLanguageGroup[];
+}
+
 interface TMDBResponse {
   page: number;
   results: Movie[];
@@ -169,29 +188,51 @@ const WEEKLY_TRENDING_LANGUAGES = [
   { label: "Telugu", code: "te" },
 ];
 
-function weeklyTrendingByLanguageList(movies: Movie[]): string {
+function weeklyTrendingByLanguageData(movies: Movie[]): WeeklyTrendingLanguageResult {
+  return {
+    generatedAt: new Date().toISOString(),
+    source: "TMDB /trending/movie/week, first results page",
+    groups: WEEKLY_TRENDING_LANGUAGES.map((language) => ({
+      ...language,
+      movies: movies
+        .filter((movie) => movie.original_language === language.code)
+        .map((movie) => ({
+          id: movie.id,
+          title: movie.title,
+          year: yearFrom(movie.release_date),
+          rating: movie.vote_average,
+        })),
+    })),
+  };
+}
+
+function weeklyTrendingByLanguageList(result: WeeklyTrendingLanguageResult): string {
   const lines = [
     "Weekly trending movies by original language",
-    "Source: TMDB /trending/movie/week, first results page",
+    `Source: ${result.source}`,
   ];
 
-  for (const language of WEEKLY_TRENDING_LANGUAGES) {
-    const matches = movies.filter((movie) => movie.original_language === language.code);
-    lines.push("", `${language.label} (${language.code})`);
+  for (const group of result.groups) {
+    lines.push("", `${group.label} (${group.code})`);
 
-    if (matches.length === 0) {
+    if (group.movies.length === 0) {
       lines.push("- No movies in the current weekly trending top results.");
       continue;
     }
 
-    matches.forEach((movie, index) => {
+    group.movies.forEach((movie, index) => {
       lines.push(
-        `${index + 1}. ${movie.title} (${yearFrom(movie.release_date)}) - ID: ${movie.id} - Rating: ${movie.vote_average}/10`,
+        `${index + 1}. ${movie.title} (${movie.year}) - ID: ${movie.id} - Rating: ${movie.rating}/10`,
       );
     });
   }
 
   return lines.join("\n");
+}
+
+async function getWeeklyTrendingByLanguage(env: Env): Promise<WeeklyTrendingLanguageResult> {
+  const data = await fetchFromTMDB<TMDBResponse>(env, "/trending/movie/week");
+  return weeklyTrendingByLanguageData(data.results);
 }
 
 function tvList(shows: TVShow[], limit = 10): string {
@@ -380,8 +421,8 @@ function createTMDBServer(env: Env): McpServer {
       annotations: READ_ONLY_TOOL,
     },
     async () => {
-      const data = await fetchFromTMDB<TMDBResponse>(env, "/trending/movie/week");
-      return textResult(weeklyTrendingByLanguageList(data.results));
+      const result = await getWeeklyTrendingByLanguage(env);
+      return textResult(weeklyTrendingByLanguageList(result));
     },
   );
 
@@ -758,7 +799,7 @@ export default {
       }, { headers: securityHeaders() });
     }
 
-    if (request.method === "OPTIONS" && url.pathname === "/api/concierge") {
+    if (request.method === "OPTIONS" && (url.pathname === "/api/concierge" || url.pathname === "/api/weekly-trending-languages")) {
       return new Response(null, {
         status: 204,
         headers: {
@@ -767,6 +808,33 @@ export default {
           "access-control-allow-headers": "authorization, content-type",
         },
       });
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/weekly-trending-languages") {
+      if (!authorized(request, env)) {
+        return unauthorizedResponse();
+      }
+
+      try {
+        const result = await getWeeklyTrendingByLanguage(env);
+        return Response.json(result, {
+          headers: {
+            ...securityHeaders(),
+            "access-control-allow-origin": "*",
+          },
+        });
+      } catch (error) {
+        return Response.json(
+          { error: error instanceof Error ? error.message : "Unable to load weekly trends." },
+          {
+            status: 500,
+            headers: {
+              ...securityHeaders(),
+              "access-control-allow-origin": "*",
+            },
+          },
+        );
+      }
     }
 
     if (request.method === "POST" && url.pathname === "/api/concierge") {

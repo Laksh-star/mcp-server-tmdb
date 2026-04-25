@@ -253,6 +253,118 @@ export function renderConciergeApp(): string {
       align-items: start;
     }
 
+    .trend-panel {
+      display: grid;
+      gap: 14px;
+      margin-bottom: 24px;
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .trend-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .trend-title {
+      display: grid;
+      gap: 4px;
+    }
+
+    .trend-title h3 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .trend-title p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .trend-button {
+      min-width: 112px;
+      height: 36px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: #06493f;
+      background: #e9f5f1;
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    .trend-button:disabled {
+      cursor: wait;
+      color: var(--muted);
+      background: #f0ece4;
+    }
+
+    .trend-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .trend-grid > .empty,
+    .trend-grid > .error {
+      grid-column: 1 / -1;
+    }
+
+    .trend-group {
+      min-height: 132px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fffdf8;
+    }
+
+    .trend-group h4 {
+      margin: 0 0 10px;
+      font-size: 13px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .trend-list {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .trend-item {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: start;
+      color: #343434;
+      font-size: 13px;
+      line-height: 1.3;
+    }
+
+    .trend-name {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .trend-rating {
+      color: var(--gold);
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .trend-empty {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
     .pick {
       overflow: hidden;
       border: 1px solid var(--line);
@@ -416,6 +528,10 @@ export function renderConciergeApp(): string {
       .meta {
         justify-content: flex-start;
       }
+
+      .trend-grid {
+        grid-template-columns: 1fr;
+      }
     }
 
     @media (max-width: 460px) {
@@ -428,6 +544,15 @@ export function renderConciergeApp(): string {
       .moods,
       .service-grid {
         grid-template-columns: 1fr;
+      }
+
+      .trend-head {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .trend-button {
+        width: 100%;
       }
     }
   </style>
@@ -530,6 +655,19 @@ export function renderConciergeApp(): string {
         <div class="meta" id="meta"></div>
       </div>
 
+      <section class="trend-panel" aria-labelledby="trend-heading">
+        <div class="trend-head">
+          <div class="trend-title">
+            <h3 id="trend-heading">Weekly trend scan</h3>
+            <p id="trend-summary">Live TMDB weekly trending movies grouped by original language.</p>
+          </div>
+          <button class="trend-button" id="load-trends" type="button">Load trends</button>
+        </div>
+        <div id="trend-output" class="trend-grid">
+          <div class="empty">Load weekly trends to compare English, Hindi, and Telugu momentum.</div>
+        </div>
+      </section>
+
       <div id="output" class="empty">No picks generated yet.</div>
       <div id="notes" class="notes"></div>
     </section>
@@ -545,6 +683,9 @@ export function renderConciergeApp(): string {
     const summary = document.querySelector("#summary");
     const submit = document.querySelector("#submit");
     const accessToken = document.querySelector("#accessToken");
+    const loadTrends = document.querySelector("#load-trends");
+    const trendOutput = document.querySelector("#trend-output");
+    const trendSummary = document.querySelector("#trend-summary");
     let selectedMood = "crowd";
 
     accessToken.value = sessionStorage.getItem("tmdbConciergeAccessToken") || "";
@@ -571,6 +712,8 @@ export function renderConciergeApp(): string {
       headline.textContent = "Tonight's shortlist";
       summary.textContent = "Choose a mood and country, then generate a ranked watchlist with posters, ratings, cast, and streaming availability.";
     });
+
+    loadTrends.addEventListener("click", loadWeeklyTrends);
 
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -617,6 +760,37 @@ export function renderConciergeApp(): string {
         submit.disabled = false;
       }
     });
+
+    async function loadWeeklyTrends() {
+      const token = String(accessToken.value || "").trim();
+      if (token) {
+        sessionStorage.setItem("tmdbConciergeAccessToken", token);
+      }
+
+      loadTrends.disabled = true;
+      loadTrends.textContent = "Loading";
+      trendOutput.className = "empty";
+      trendOutput.textContent = "Checking weekly TMDB trends...";
+
+      try {
+        const response = await fetch("/api/weekly-trending-languages", {
+          headers: {
+            ...(token ? { authorization: "Bearer " + token } : {}),
+          },
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Request failed");
+        renderWeeklyTrends(result);
+        statusEl.textContent = "Done";
+      } catch (error) {
+        trendOutput.className = "error";
+        trendOutput.textContent = error instanceof Error ? error.message : "Unable to load weekly trends.";
+        statusEl.textContent = "Error";
+      } finally {
+        loadTrends.disabled = false;
+        loadTrends.textContent = "Refresh";
+      }
+    }
 
     function text(value) {
       return String(value || "");
@@ -675,6 +849,30 @@ export function renderConciergeApp(): string {
           "<div class=\\"reasons\\">" + reasons + "</div>" +
         "</div>" +
       "</article>";
+    }
+
+    function renderWeeklyTrends(result) {
+      trendSummary.textContent = result.source + " · " + new Date(result.generatedAt).toLocaleString();
+      trendOutput.className = "trend-grid";
+      trendOutput.innerHTML = (result.groups || []).map((group) => {
+        const movies = group.movies || [];
+        const visibleMovies = movies.slice(0, 8);
+        const extraCount = Math.max(0, movies.length - visibleMovies.length);
+        const body = movies.length
+          ? "<ol class=\\"trend-list\\">" + visibleMovies.map((movie) =>
+              "<li class=\\"trend-item\\">" +
+                "<span class=\\"trend-name\\">" + escapeHtml(movie.title) + " (" + escapeHtml(movie.year) + ")</span>" +
+                "<span class=\\"trend-rating\\">" + Number(movie.rating || 0).toFixed(1) + "</span>" +
+              "</li>"
+            ).join("") + "</ol>" +
+            (extraCount ? "<div class=\\"trend-empty\\">+" + extraCount + " more in this group</div>" : "")
+          : "<div class=\\"trend-empty\\">No movies in the current weekly trending top results.</div>";
+
+        return "<article class=\\"trend-group\\">" +
+          "<h4>" + escapeHtml(group.label) + " (" + escapeHtml(group.code) + ")</h4>" +
+          body +
+        "</article>";
+      }).join("");
     }
 
     function escapeHtml(value) {
