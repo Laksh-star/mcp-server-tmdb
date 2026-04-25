@@ -60,6 +60,23 @@ TMDB_API_KEY=your_api_key_here node plugins/tmdb/scripts/smoke-test.mjs --online
 
 The online run should connect to the server, list tools, and print a short sample from the `get_trending` tool.
 
+## Weekly trending language demo
+
+The repo also includes a demo runner for the `get_weekly_trending_by_language` tool. It fetches live weekly trending movies and groups the current TMDB first page into English, Hindi, and Telugu using `original_language`.
+
+Local stdio MCP server:
+
+```bash
+npm run build
+set -a && source ./.env && set +a && npm run demo:weekly-trending
+```
+
+Remote deployed MCP endpoint after deploying this version of the Worker:
+
+```bash
+TMDB_MCP_ACCESS_TOKEN=<your-access-token> node scripts/weekly-trending-languages.mjs --mcp-url https://tmdb-mcp.<your-workers-subdomain>.workers.dev/mcp
+```
+
 ## Test inside Codex
 
 1. Open this repo as the workspace.

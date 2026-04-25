@@ -27,6 +27,7 @@ interface Movie {
   id: number;
   title: string;
   release_date: string;
+  original_language?: string;
   vote_average: number;
   overview: string;
   poster_path?: string;
@@ -159,15 +160,69 @@ async function fetchFromTMDB<T>(endpoint: string, params: Record<string, string>
     url.searchParams.append(key, value);
   }
 
-  const response = await fetch(url.toString(), { agent: tmdbAgent });
-  if (!response.ok) {
-    throw new Error(`TMDB API error: ${response.statusText}`);
+  const safeUrl = `${TMDB_BASE_URL}${endpoint}`;
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      const response = await fetch(url.toString(), { agent: tmdbAgent });
+      if (!response.ok) {
+        if (attempt < 3 && (response.status === 429 || response.status >= 500)) {
+          await new Promise((resolve) => setTimeout(resolve, attempt * 400));
+          continue;
+        }
+        throw new Error(`TMDB API error for ${endpoint}: ${response.status} ${response.statusText}`);
+      }
+      return response.json() as Promise<T>;
+    } catch (error) {
+      lastError = error;
+      if (attempt < 3) {
+        await new Promise((resolve) => setTimeout(resolve, attempt * 400));
+        continue;
+      }
+    }
   }
-  return response.json() as Promise<T>;
+
+  const message = lastError instanceof Error
+    ? lastError.message.replace(url.toString(), safeUrl)
+    : String(lastError);
+  throw new Error(`TMDB API request failed for ${endpoint}: ${message}`);
 }
 
 async function getMovieDetails(movieId: string): Promise<MovieDetails> {
   return fetchFromTMDB<MovieDetails>(`/movie/${movieId}`, { append_to_response: "credits,reviews" });
+}
+
+const WEEKLY_TRENDING_LANGUAGES = [
+  { label: "English", code: "en" },
+  { label: "Hindi", code: "hi" },
+  { label: "Telugu", code: "te" },
+];
+
+function renderWeeklyTrendingByLanguage(movies: Movie[]): string {
+  const lines = [
+    "Weekly trending movies by original language",
+    "Source: TMDB /trending/movie/week, first results page",
+  ];
+
+  for (const language of WEEKLY_TRENDING_LANGUAGES) {
+    const matches = movies.filter((movie) => movie.original_language === language.code);
+    lines.push("", `${language.label} (${language.code})`);
+
+    if (matches.length === 0) {
+      lines.push("- No movies in the current weekly trending top results.");
+      continue;
+    }
+
+    matches.forEach((movie, index) => {
+      const year = movie.release_date?.split("-")[0] || "unknown";
+      lines.push(
+        `${index + 1}. ${movie.title} (${year}) - ID: ${movie.id} - Rating: ${movie.vote_average}/10`,
+      );
+    });
+  }
+
+  return lines.join("\n");
 }
 
 server.setRequestHandler(ListResourcesRequestSchema, async (request) => {
@@ -265,6 +320,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
           },
           required: ["timeWindow"],
+        },
+      },
+      {
+        name: "get_weekly_trending_by_language",
+        description: "Get weekly trending movies grouped into English, Hindi, and Telugu by TMDB original_language",
+        inputSchema: {
+          type: "object",
+          properties: {},
         },
       },
       {
@@ -522,6 +585,20 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             {
               type: "text",
               text: `Trending movies for the ${timeWindow}:\n\n${trending}`,
+            },
+          ],
+          isError: false,
+        };
+      }
+
+      case "get_weekly_trending_by_language": {
+        const data = await fetchFromTMDB<TMDBResponse>("/trending/movie/week");
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: renderWeeklyTrendingByLanguage(data.results),
             },
           ],
           isError: false,

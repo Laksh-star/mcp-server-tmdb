@@ -54,7 +54,13 @@ try {
   console.log(`Found ${toolNames.length} tools.`);
   console.log(toolNames.join(", "));
 
-  const requiredTools = ["search_movies", "get_trending", "search_tv_shows", "search_person"];
+  const requiredTools = [
+    "search_movies",
+    "get_trending",
+    "get_weekly_trending_by_language",
+    "search_tv_shows",
+    "search_person",
+  ];
   const missingTools = requiredTools.filter((tool) => !toolNames.includes(tool));
   if (missingTools.length > 0) {
     throw new Error(`Missing expected tools: ${missingTools.join(", ")}`);

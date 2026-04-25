@@ -8,6 +8,7 @@ An MCP server for The Movie Database (TMDB) API. It provides movie and TV search
 - **get_weekend_watchlist** — Ranked weekend shortlist by mood, country, language, runtime, rating, and services
 - **search_movies** — Search by title/keywords → titles, IDs, ratings, overviews
 - **get_trending** — Top 10 trending movies (`timeWindow`: "day" | "week")
+- **get_weekly_trending_by_language** — Weekly trending movies grouped by original language into English, Hindi, and Telugu
 - **search_by_genre** — Movies by genre name, optional year filter
 - **advanced_search** — Filter by genre, year, min rating, sort, language
 - **search_by_keyword** — Find movies by theme/keyword (e.g. "zombie", "heist")
@@ -58,6 +59,25 @@ An MCP server for The Movie Database (TMDB) API. It provides movie and TV search
    ```
 
 In Codex, a fresh session should show `TMDB` in the plugin list and expose the `mcp__tmdb__` namespace.
+
+## Weekly Trending Language Demo
+
+This repo includes a small shareable demo that calls the MCP tool `get_weekly_trending_by_language`, which fetches live TMDB weekly trending movies and groups the current first page by TMDB `original_language`.
+
+Run it against the local stdio MCP server:
+
+```bash
+npm run build
+set -a && source ./.env && set +a && npm run demo:weekly-trending
+```
+
+After deploying this version of the Worker, run the same demo against a remote MCP endpoint:
+
+```bash
+TMDB_MCP_ACCESS_TOKEN=<your-access-token> node scripts/weekly-trending-languages.mjs --mcp-url https://tmdb-mcp.<your-workers-subdomain>.workers.dev/mcp
+```
+
+If the deployment is intentionally authless for personal testing, omit `TMDB_MCP_ACCESS_TOKEN`.
 
 ## Remote MCP on Cloudflare Workers
 

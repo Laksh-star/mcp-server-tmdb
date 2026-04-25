@@ -16,6 +16,7 @@ interface Movie {
   id: number;
   title: string;
   release_date?: string;
+  original_language?: string;
   vote_average: number;
   overview: string;
   runtime?: number;
@@ -162,6 +163,37 @@ function movieList(movies: Movie[], limit = 10): string {
     .join("\n---\n");
 }
 
+const WEEKLY_TRENDING_LANGUAGES = [
+  { label: "English", code: "en" },
+  { label: "Hindi", code: "hi" },
+  { label: "Telugu", code: "te" },
+];
+
+function weeklyTrendingByLanguageList(movies: Movie[]): string {
+  const lines = [
+    "Weekly trending movies by original language",
+    "Source: TMDB /trending/movie/week, first results page",
+  ];
+
+  for (const language of WEEKLY_TRENDING_LANGUAGES) {
+    const matches = movies.filter((movie) => movie.original_language === language.code);
+    lines.push("", `${language.label} (${language.code})`);
+
+    if (matches.length === 0) {
+      lines.push("- No movies in the current weekly trending top results.");
+      continue;
+    }
+
+    matches.forEach((movie, index) => {
+      lines.push(
+        `${index + 1}. ${movie.title} (${yearFrom(movie.release_date)}) - ID: ${movie.id} - Rating: ${movie.vote_average}/10`,
+      );
+    });
+  }
+
+  return lines.join("\n");
+}
+
 function tvList(shows: TVShow[], limit = 10): string {
   return shows
     .slice(0, limit)
@@ -222,12 +254,29 @@ async function fetchFromTMDB<T>(
     }
   }
 
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`TMDB API error: ${response.status} ${response.statusText}`);
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        if (attempt < 3 && (response.status === 429 || response.status >= 500)) {
+          await new Promise((resolve) => setTimeout(resolve, attempt * 400));
+          continue;
+        }
+        throw new Error(`TMDB API error: ${response.status} ${response.statusText}`);
+      }
+      return response.json() as Promise<T>;
+    } catch (error) {
+      lastError = error;
+      if (attempt < 3) {
+        await new Promise((resolve) => setTimeout(resolve, attempt * 400));
+        continue;
+      }
+    }
   }
 
-  return response.json() as Promise<T>;
+  throw lastError instanceof Error ? lastError : new Error(String(lastError));
 }
 
 async function genreIdFor(env: Env, genre: string): Promise<{ id?: number; available: string[] }> {
@@ -320,6 +369,19 @@ function createTMDBServer(env: Env): McpServer {
     async ({ timeWindow }) => {
       const data = await fetchFromTMDB<TMDBResponse>(env, `/trending/movie/${timeWindow}`);
       return textResult(`Trending movies for the ${timeWindow}:\n\n${movieList(data.results)}`);
+    },
+  );
+
+  server.registerTool(
+    "get_weekly_trending_by_language",
+    {
+      description: "Get weekly trending movies grouped into English, Hindi, and Telugu by TMDB original_language",
+      inputSchema: {},
+      annotations: READ_ONLY_TOOL,
+    },
+    async () => {
+      const data = await fetchFromTMDB<TMDBResponse>(env, "/trending/movie/week");
+      return textResult(weeklyTrendingByLanguageList(data.results));
     },
   );
 
