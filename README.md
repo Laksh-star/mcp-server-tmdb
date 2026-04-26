@@ -19,6 +19,7 @@ An MCP server for The Movie Database (TMDB) API. It provides movie and TV search
 - **get_recommendations** — Top 5 recommendations based on a movie ID
 - **get_similar_movies** — Similar movies via TMDB's similarity algorithm
 - **get_watch_providers** — Streaming/rental/purchase availability by country (default: IN)
+- **find_where_to_watch** — Search 1-5 movie titles and return streaming/rental/purchase availability with preferred-service matches
 
 ### TV Shows
 - **search_tv_shows** — Search TV series by title
