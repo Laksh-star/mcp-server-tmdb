@@ -178,6 +178,14 @@ If `ACCESS_TOKEN` is not configured, the Worker is authless for easy personal te
 
 ## Weekend Watch Concierge
 
+Run the offline concierge test:
+
+```bash
+npm test
+```
+
+This builds the TypeScript project, starts a tiny local TMDB-compatible fixture server, and verifies that `createWeekendConcierge` ranks a requested streaming-service match first while respecting the runtime filter. It does not need a TMDB API key.
+
 Run the Worker locally:
 
 ```bash
