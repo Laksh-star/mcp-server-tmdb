@@ -261,33 +261,38 @@ export function renderConciergeApp(): string {
       border-bottom: 1px solid var(--line);
     }
 
-    .trend-head {
+    .trend-head,
+    .mcp-head {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 14px;
     }
 
-    .trend-title {
+    .trend-title,
+    .mcp-title {
       display: grid;
       gap: 4px;
     }
 
-    .trend-title h3 {
+    .trend-title h3,
+    .mcp-title h3 {
       margin: 0;
       font-size: 18px;
       line-height: 1.2;
       letter-spacing: 0;
     }
 
-    .trend-title p {
+    .trend-title p,
+    .mcp-title p {
       margin: 0;
       color: var(--muted);
       font-size: 13px;
       line-height: 1.4;
     }
 
-    .trend-button {
+    .trend-button,
+    .mcp-button {
       min-width: 112px;
       height: 36px;
       border: 1px solid var(--line);
@@ -298,7 +303,8 @@ export function renderConciergeApp(): string {
       font-weight: 800;
     }
 
-    .trend-button:disabled {
+    .trend-button:disabled,
+    .mcp-button:disabled {
       cursor: wait;
       color: var(--muted);
       background: #f0ece4;
@@ -362,6 +368,76 @@ export function renderConciergeApp(): string {
     .trend-empty {
       color: var(--muted);
       font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .mcp-panel {
+      display: grid;
+      gap: 14px;
+      margin-bottom: 24px;
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .mcp-output {
+      display: grid;
+      gap: 12px;
+    }
+
+    .mcp-kpis {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .mcp-kpi,
+    .mcp-sample {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fffdf8;
+      padding: 12px;
+    }
+
+    .mcp-kpi {
+      min-height: 74px;
+    }
+
+    .mcp-kpi span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.3;
+    }
+
+    .mcp-kpi strong {
+      display: block;
+      margin-top: 5px;
+      color: #06493f;
+      font-size: 22px;
+      line-height: 1.1;
+    }
+
+    .mcp-samples {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .mcp-sample h4 {
+      margin: 0 0 8px;
+      font-size: 13px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .mcp-sample pre {
+      margin: 0;
+      max-height: 230px;
+      overflow: auto;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      color: #343434;
+      font-size: 12px;
       line-height: 1.4;
     }
 
@@ -532,6 +608,11 @@ export function renderConciergeApp(): string {
       .trend-grid {
         grid-template-columns: 1fr;
       }
+
+      .mcp-kpis,
+      .mcp-samples {
+        grid-template-columns: 1fr;
+      }
     }
 
     @media (max-width: 460px) {
@@ -546,12 +627,14 @@ export function renderConciergeApp(): string {
         grid-template-columns: 1fr;
       }
 
-      .trend-head {
+      .trend-head,
+      .mcp-head {
         align-items: stretch;
         flex-direction: column;
       }
 
-      .trend-button {
+      .trend-button,
+      .mcp-button {
         width: 100%;
       }
     }
@@ -668,6 +751,17 @@ export function renderConciergeApp(): string {
         </div>
       </section>
 
+      <section class="mcp-panel" aria-labelledby="mcp-heading">
+        <div class="mcp-head">
+          <div class="mcp-title">
+            <h3 id="mcp-heading">MCP tool surface</h3>
+            <p id="mcp-summary">Verify the remote MCP route and sample the main workflow tools.</p>
+          </div>
+          <button class="mcp-button" id="run-mcp-smoke" type="button">Run smoke</button>
+        </div>
+        <div id="mcp-output" class="empty">Run the smoke check to confirm the deployed MCP endpoint exposes the expected workflow tools.</div>
+      </section>
+
       <div id="output" class="empty">No picks generated yet.</div>
       <div id="notes" class="notes"></div>
     </section>
@@ -686,7 +780,30 @@ export function renderConciergeApp(): string {
     const loadTrends = document.querySelector("#load-trends");
     const trendOutput = document.querySelector("#trend-output");
     const trendSummary = document.querySelector("#trend-summary");
+    const runMcpSmoke = document.querySelector("#run-mcp-smoke");
+    const mcpOutput = document.querySelector("#mcp-output");
+    const mcpSummary = document.querySelector("#mcp-summary");
     let selectedMood = "crowd";
+    const expectedTools = [
+      "advanced_search",
+      "compare_movies",
+      "find_where_to_watch",
+      "get_movie_details",
+      "get_now_playing",
+      "get_person_details",
+      "get_recommendations",
+      "get_similar_movies",
+      "get_trending",
+      "get_trending_tv",
+      "get_watch_providers",
+      "get_weekend_watchlist",
+      "get_weekly_trending_by_language",
+      "search_by_genre",
+      "search_by_keyword",
+      "search_movies",
+      "search_person",
+      "search_tv_shows",
+    ];
 
     accessToken.value = sessionStorage.getItem("tmdbConciergeAccessToken") || "";
 
@@ -714,6 +831,7 @@ export function renderConciergeApp(): string {
     });
 
     loadTrends.addEventListener("click", loadWeeklyTrends);
+    runMcpSmoke.addEventListener("click", runMcpToolSmoke);
 
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -790,6 +908,111 @@ export function renderConciergeApp(): string {
         loadTrends.disabled = false;
         loadTrends.textContent = "Refresh";
       }
+    }
+
+    async function runMcpToolSmoke() {
+      const token = String(accessToken.value || "").trim();
+      if (token) {
+        sessionStorage.setItem("tmdbConciergeAccessToken", token);
+      }
+
+      runMcpSmoke.disabled = true;
+      runMcpSmoke.textContent = "Running";
+      mcpOutput.className = "empty";
+      mcpOutput.textContent = "Calling /mcp and sampling workflow tools...";
+
+      try {
+        const client = createMcpClient(token);
+        await client.rpc("initialize", {
+          protocolVersion: "2025-06-18",
+          capabilities: {},
+          clientInfo: {
+            name: "weekend-watch-concierge-browser",
+            version: "1.0.0",
+          },
+        });
+        const toolsResult = await client.rpc("tools/list", {});
+        const toolNames = (toolsResult.tools || []).map((tool) => tool.name).sort();
+        const missing = expectedTools.filter((tool) => !toolNames.includes(tool));
+        if (missing.length) throw new Error("Missing expected tools: " + missing.join(", "));
+
+        const samples = await Promise.all([
+          client.rpc("tools/call", {
+            name: "compare_movies",
+            arguments: { movieIds: ["603", "155"], country: "US" },
+          }),
+          client.rpc("tools/call", {
+            name: "find_where_to_watch",
+            arguments: { titles: ["The Matrix", "The Dark Knight"], country: "US", services: ["HBO", "Netflix"] },
+          }),
+          client.rpc("tools/call", {
+            name: "get_weekend_watchlist",
+            arguments: {
+              mood: "thriller",
+              country: "US",
+              language: "any",
+              runtime: "150",
+              minRating: "6.5",
+              services: ["Netflix", "Prime Video"],
+            },
+          }),
+        ]);
+
+        const sampleData = [
+          { name: "compare_movies", text: textFromToolResult(samples[0]) },
+          { name: "find_where_to_watch", text: textFromToolResult(samples[1]) },
+          { name: "get_weekend_watchlist", text: textFromToolResult(samples[2]) },
+        ];
+        renderMcpSmoke(toolNames, sampleData);
+        statusEl.textContent = "Done";
+      } catch (error) {
+        mcpOutput.className = "error";
+        mcpOutput.textContent = error instanceof Error ? error.message : "Unable to run MCP smoke.";
+        statusEl.textContent = "Error";
+      } finally {
+        runMcpSmoke.disabled = false;
+        runMcpSmoke.textContent = "Run smoke";
+      }
+    }
+
+    function createMcpClient(token) {
+      let id = 1;
+      return {
+        async rpc(method, params) {
+          const response = await fetch("/mcp", {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+              accept: "application/json, text/event-stream",
+              ...(token ? { authorization: "Bearer " + token } : {}),
+            },
+            body: JSON.stringify({
+              jsonrpc: "2.0",
+              id: id++,
+              method,
+              params,
+            }),
+          });
+          const raw = await response.text();
+          if (!response.ok) throw new Error(method + " failed with " + response.status + ": " + raw);
+          const payload = parseMcpPayload(raw);
+          if (payload.error) throw new Error(method + " returned error: " + JSON.stringify(payload.error));
+          return payload.result;
+        },
+      };
+    }
+
+    function parseMcpPayload(raw) {
+      if (!raw.startsWith("event:")) return JSON.parse(raw);
+      const dataLine = raw.split("\\n").find((line) => line.startsWith("data: "));
+      return JSON.parse(dataLine ? dataLine.slice(6) : "{}");
+    }
+
+    function textFromToolResult(result) {
+      if (result.isError) throw new Error("MCP tool returned an error.");
+      const item = (result.content || []).find((content) => content.type === "text" && "text" in content);
+      if (!item) throw new Error("MCP tool response did not include text content.");
+      return item.text || "";
     }
 
     function text(value) {
@@ -873,6 +1096,27 @@ export function renderConciergeApp(): string {
           body +
         "</article>";
       }).join("");
+    }
+
+    function renderMcpSmoke(toolNames, samples) {
+      mcpSummary.textContent = "MCP route verified · " + new Date().toLocaleString();
+      mcpOutput.className = "mcp-output";
+      const kpis = [
+        { label: "Expected tools", value: expectedTools.length },
+        { label: "Actual tools", value: toolNames.length },
+        { label: "Workflow calls", value: samples.length },
+      ].map((item) =>
+        "<div class=\\"mcp-kpi\\"><span>" + escapeHtml(item.label) + "</span><strong>" + escapeHtml(item.value) + "</strong></div>"
+      ).join("");
+      const sampleHtml = samples.map((sample) =>
+        "<article class=\\"mcp-sample\\">" +
+          "<h4>" + escapeHtml(sample.name) + "</h4>" +
+          "<pre>" + escapeHtml(sample.text.split("\\n").slice(0, 14).join("\\n")) + "</pre>" +
+        "</article>"
+      ).join("");
+      mcpOutput.innerHTML =
+        "<div class=\\"mcp-kpis\\">" + kpis + "</div>" +
+        "<div class=\\"mcp-samples\\">" + sampleHtml + "</div>";
     }
 
     function escapeHtml(value) {
