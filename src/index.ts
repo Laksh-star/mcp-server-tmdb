@@ -274,6 +274,97 @@ function renderMovieComparison(
   return lines.join("\n");
 }
 
+function serviceMatches(available: string[], requested: string[]): string[] {
+  if (requested.length === 0) return [];
+  const normalizedRequested = requested.map((service) => service.toLowerCase());
+  return available.filter((provider) =>
+    normalizedRequested.some((service) => provider.toLowerCase().includes(service)),
+  );
+}
+
+function renderProviderBlock(providers?: WatchProviderResult): {
+  lines: string[];
+  allProviderNames: string[];
+} {
+  const streaming = providerNames(providers?.flatrate);
+  const rent = providerNames(providers?.rent);
+  const buy = providerNames(providers?.buy);
+  const lines = [
+    streaming.length > 0 ? `Streaming: ${streaming.join(", ")}` : null,
+    rent.length > 0 ? `Rent: ${rent.slice(0, 5).join(", ")}` : null,
+    buy.length > 0 ? `Buy: ${buy.slice(0, 5).join(", ")}` : null,
+    providers?.link ? `TMDB watch link: ${providers.link}` : null,
+  ].filter((line): line is string => Boolean(line));
+
+  return {
+    lines,
+    allProviderNames: [...streaming, ...rent, ...buy],
+  };
+}
+
+function renderWhereToWatch(
+  matches: Array<{ query: string; movie?: Movie; providers?: WatchProviderResult }>,
+  country: string,
+  requestedServices: string[],
+): string {
+  const lines = [
+    `Where to watch (${country})`,
+    requestedServices.length > 0
+      ? `Preferred services: ${requestedServices.join(", ")}`
+      : "Preferred services: any",
+    "",
+  ];
+  const serviceMatchedTitles: string[] = [];
+
+  matches.forEach(({ query, movie, providers }, index) => {
+    lines.push(`${index + 1}. ${query}`);
+
+    if (!movie) {
+      lines.push("No TMDB movie match found.", "");
+      return;
+    }
+
+    const providerBlock = renderProviderBlock(providers);
+    const matchedServices = serviceMatches(providerBlock.allProviderNames, requestedServices);
+    if (matchedServices.length > 0) serviceMatchedTitles.push(`${movie.title} via ${matchedServices.join(", ")}`);
+
+    lines.push(
+      `Matched: ${movie.title} (${yearFrom(movie.release_date)}) - ID: ${movie.id}`,
+      `Rating: ${movie.vote_average}/10`,
+      providerBlock.lines.length > 0
+        ? providerBlock.lines.join("\n")
+        : `No watch providers found for ${country}.`,
+    );
+    if (requestedServices.length > 0) {
+      lines.push(
+        matchedServices.length > 0
+          ? `Preferred service match: ${matchedServices.join(", ")}`
+          : "Preferred service match: none found",
+      );
+    }
+    lines.push("");
+  });
+
+  lines.push("Quick decision");
+  if (serviceMatchedTitles.length > 0) {
+    lines.push(`- Preferred-service matches: ${serviceMatchedTitles.join("; ")}`);
+  } else if (requestedServices.length > 0) {
+    lines.push("- Preferred-service matches: none found in TMDB provider data");
+  }
+
+  const anyAvailability = matches
+    .filter(({ providers }) => renderProviderBlock(providers).allProviderNames.length > 0)
+    .map(({ movie }) => movie?.title)
+    .filter(Boolean);
+  lines.push(
+    anyAvailability.length > 0
+      ? `- Any availability found: ${anyAvailability.join(", ")}`
+      : `- Any availability found: none for ${country}`,
+  );
+
+  return lines.join("\n");
+}
+
 const WEEKLY_TRENDING_LANGUAGES = [
   { label: "English", code: "en" },
   { label: "Hindi", code: "hi" },
@@ -538,6 +629,32 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
           },
           required: ["movieId"],
+        },
+      },
+      {
+        name: "find_where_to_watch",
+        description: "Find where one or more movie titles are available by searching titles, matching TMDB movies, and checking streaming, rental, and purchase providers",
+        inputSchema: {
+          type: "object",
+          properties: {
+            titles: {
+              type: "array",
+              items: { type: "string" },
+              minItems: 1,
+              maxItems: 5,
+              description: "Movie titles to search and check for availability",
+            },
+            country: {
+              type: "string",
+              description: "ISO 3166-1 country code for provider availability. Defaults to IN.",
+            },
+            services: {
+              type: "array",
+              items: { type: "string" },
+              description: "Optional preferred services to highlight, for example Netflix, Prime Video, or Disney Plus.",
+            },
+          },
+          required: ["titles"],
         },
       },
       {
@@ -994,6 +1111,42 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         return {
           content: [{ type: "text", text: lines.join("\n") }],
+          isError: false,
+        };
+      }
+
+      case "find_where_to_watch": {
+        const titles = request.params.arguments?.titles as string[] | undefined;
+        const country = ((request.params.arguments?.country as string) || "IN").toUpperCase();
+        const services = ((request.params.arguments?.services as string[] | undefined) || [])
+          .map((service) => service.trim())
+          .filter(Boolean);
+
+        if (!Array.isArray(titles) || titles.length < 1 || titles.length > 5) {
+          return {
+            content: [{ type: "text", text: "find_where_to_watch requires 1 to 5 movie titles." }],
+            isError: true,
+          };
+        }
+
+        const matches = await Promise.all(titles.map(async (query) => {
+          const search = await fetchFromTMDB<TMDBResponse>("/search/movie", { query });
+          const movie = search.results[0];
+          if (!movie) return { query };
+
+          const providersResult = await fetchFromTMDB<WatchProvidersResponse>(
+            `/movie/${movie.id}/watch/providers`,
+          ).catch(() => undefined);
+
+          return {
+            query,
+            movie,
+            providers: providersResult?.results?.[country],
+          };
+        }));
+
+        return {
+          content: [{ type: "text", text: renderWhereToWatch(matches, country, services) }],
           isError: false,
         };
       }
