@@ -299,9 +299,9 @@ function scorePick(
 
   const reasons: string[] = [];
   if (genreMatches > 0) reasons.push(`Fits ${profile.label.toLowerCase()} mode`);
+  if (serviceMatches > 0) reasons.push(`Matches ${serviceMatches} requested service${serviceMatches > 1 ? "s" : ""}`);
   if (movie.vote_average >= 7.5) reasons.push(`Strong TMDB rating at ${movie.vote_average.toFixed(1)}/10`);
   if (streaming.length > 0) reasons.push(`Streaming in your selected country`);
-  if (serviceMatches > 0) reasons.push(`Matches ${serviceMatches} requested service${serviceMatches > 1 ? "s" : ""}`);
   if (movie.runtime && movie.runtime <= 120) reasons.push(`Weekend-friendly ${movie.runtime} minute runtime`);
   if (reasons.length === 0) reasons.push("Balanced pick from TMDB popularity and ratings");
 
