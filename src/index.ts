@@ -21,6 +21,7 @@ import {
   ListToolsRequestSchema,
   ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
+import { createWeekendConcierge } from "./concierge.js";
 
 // Type definitions
 interface Movie {
@@ -365,6 +366,37 @@ function renderWhereToWatch(
   return lines.join("\n");
 }
 
+function conciergeSummary(result: Awaited<ReturnType<typeof createWeekendConcierge>>): string {
+  const picks = result.picks
+    .map((pick, index) => {
+      const providers = pick.providers.streaming.length > 0
+        ? `Streaming: ${pick.providers.streaming.join(", ")}`
+        : "Streaming: no subscription provider found";
+      const facts = [
+        `${pick.year}`,
+        `${pick.rating.toFixed(1)}/10`,
+        pick.runtime ? `${pick.runtime} min` : null,
+        pick.genres.length > 0 ? pick.genres.slice(0, 3).join(", ") : null,
+      ].filter(Boolean).join(" | ");
+
+      return `${index + 1}. ${pick.title} - ID: ${pick.id}\n` +
+        `${facts}\n` +
+        `${providers}\n` +
+        `Why: ${pick.reasons.join("; ")}\n` +
+        `Overview: ${pick.overview}`;
+    })
+    .join("\n---\n");
+
+  const notes = result.notes.length > 0 ? `\n\nNotes:\n${result.notes.map((note) => `- ${note}`).join("\n")}` : "";
+
+  return `Weekend Watch Concierge picks\n` +
+    `Mood: ${result.mood}\n` +
+    `Country: ${result.country}\n` +
+    `Language: ${result.language}\n\n` +
+    `${picks || "No matching picks found."}` +
+    notes;
+}
+
 const WEEKLY_TRENDING_LANGUAGES = [
   { label: "English", code: "en" },
   { label: "Hindi", code: "hi" },
@@ -451,6 +483,41 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: [
+      {
+        name: "get_weekend_watchlist",
+        description: "Generate a ranked movie shortlist for a weekend watch session using mood, country, language, runtime, rating, and streaming services",
+        inputSchema: {
+          type: "object",
+          properties: {
+            mood: {
+              type: "string",
+              enum: ["crowd", "thriller", "thoughtful", "funny", "family", "mindbend"],
+              description: "Viewing mood. Defaults to crowd.",
+            },
+            country: {
+              type: "string",
+              description: "ISO 3166-1 country code for watch providers. Defaults to IN.",
+            },
+            language: {
+              type: "string",
+              description: "Original language code such as en, hi, ta, te, ko, or any.",
+            },
+            runtime: {
+              type: "string",
+              description: "Maximum runtime in minutes, or any.",
+            },
+            minRating: {
+              type: "string",
+              description: "Minimum TMDB rating from 0 to 9. Defaults to 6.5.",
+            },
+            services: {
+              type: "array",
+              items: { type: "string" },
+              description: "Preferred streaming services, for example Netflix or Prime Video.",
+            },
+          },
+        },
+      },
       {
         name: "search_movies",
         description: "Search for movies by title or keywords",
@@ -739,6 +806,28 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   try {
     switch (request.params.name) {
+      case "get_weekend_watchlist": {
+        const result = await createWeekendConcierge(
+          {
+            TMDB_API_KEY,
+            TMDB_BASE_URL,
+          },
+          {
+            mood: request.params.arguments?.mood as string | undefined,
+            country: request.params.arguments?.country as string | undefined,
+            language: request.params.arguments?.language as string | undefined,
+            runtime: request.params.arguments?.runtime as string | undefined,
+            minRating: request.params.arguments?.minRating as string | undefined,
+            services: request.params.arguments?.services as string[] | undefined,
+          },
+        );
+
+        return {
+          content: [{ type: "text", text: conciergeSummary(result) }],
+          isError: false,
+        };
+      }
+
       case "search_movies": {
         const query = request.params.arguments?.query as string;
         const data = await fetchFromTMDB<TMDBResponse>("/search/movie", { query });

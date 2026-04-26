@@ -62,6 +62,31 @@ An MCP server for The Movie Database (TMDB) API. It provides movie and TV search
 
 In Codex, a fresh session should show `TMDB` in the plugin list and expose the `mcp__tmdb__` namespace.
 
+## Tool Surface Smoke
+
+Use this smoke test after adding or merging tools. It verifies the expected MCP tool contract and calls the main workflow tools: `compare_movies`, `find_where_to_watch`, and `get_weekend_watchlist`.
+
+Local stdio MCP:
+
+```bash
+npm run build
+set -a && source ./.env && set +a && npm run smoke:tools
+```
+
+Cloudflare-hosted MCP:
+
+```bash
+TMDB_MCP_ACCESS_TOKEN=<your-access-token> node scripts/tool-surface-smoke.mjs --mcp-url https://tmdb-mcp.<your-workers-subdomain>.workers.dev/mcp
+```
+
+The script writes a compact verification artifact to:
+
+```text
+examples/tool-surface-smoke.md
+```
+
+To avoid tool bloat, prefer adding workflow tools that combine multiple TMDB calls into a useful user decision. Keep raw endpoint-style tools only when they are broadly reusable primitives.
+
 ## Weekly Trending Language Demo
 
 This repo includes a small shareable demo that calls the MCP tool `get_weekly_trending_by_language`, which fetches live TMDB weekly trending movies and groups the current first page by TMDB `original_language`.
