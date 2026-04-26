@@ -13,7 +13,8 @@
     "install:local": "node plugins/tmdb/scripts/install-local-integrations.mjs",
     "smoke:plugin": "node plugins/tmdb/scripts/smoke-test.mjs",
     "smoke:concierge": "node scripts/concierge-smoke.mjs",
-    "demo:weekly-trending": "node scripts/weekly-trending-languages.mjs"
+    "demo:weekly-trending": "node scripts/weekly-trending-languages.mjs",
+    "demo:now-playing": "node scripts/now-playing-follow-on-demo.mjs"
   },
   "keywords": [],
   "author": "",

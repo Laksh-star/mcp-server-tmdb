@@ -241,6 +241,35 @@ Agents can call `get_weekend_watchlist` with:
 - `minRating`: minimum TMDB rating
 - `services`: preferred streaming services
 
+## Cloudflare MCP Demo Workflow
+
+For a concrete end-to-end agent workflow, run the now-playing follow-on demo. It uses the MCP server as a remote client would:
+
+1. `get_now_playing` for current theater discovery in a selected region
+2. `get_movie_details` for the selected title
+3. `get_watch_providers` for watch-now availability
+4. `get_recommendations`, with `get_similar_movies` fallback for very new titles
+5. `get_watch_providers` for follow-on availability checks
+
+Local stdio MCP:
+
+```bash
+npm run build
+set -a && source ./.env && set +a && npm run demo:now-playing -- --region US
+```
+
+Cloudflare-hosted MCP:
+
+```bash
+TMDB_MCP_ACCESS_TOKEN=<your-access-token> node scripts/now-playing-follow-on-demo.mjs --mcp-url https://tmdb-mcp.<your-workers-subdomain>.workers.dev/mcp --region US
+```
+
+The script writes the final artifact here:
+
+```text
+examples/now-playing-follow-on-demo.md
+```
+
 ## What `npm run install:local` does
 
 The installer uses the repo-owned launcher at `plugins/tmdb/scripts/run-server.sh`.
