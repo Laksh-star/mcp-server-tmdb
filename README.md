@@ -15,6 +15,7 @@ An MCP server for The Movie Database (TMDB) API. It provides movie and TV search
 
 ### Movie Details
 - **get_movie_details** — Full details: cast, crew, runtime, genres, reviews (by `movieId`)
+- **compare_movies** — Side-by-side comparison for 2-5 movie IDs with ratings, runtime, cast, director, providers, and best-fit notes
 - **get_recommendations** — Top 5 recommendations based on a movie ID
 - **get_similar_movies** — Similar movies via TMDB's similarity algorithm
 - **get_watch_providers** — Streaming/rental/purchase availability by country (default: IN)
