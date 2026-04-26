@@ -193,6 +193,87 @@ async function getMovieDetails(movieId: string): Promise<MovieDetails> {
   return fetchFromTMDB<MovieDetails>(`/movie/${movieId}`, { append_to_response: "credits,reviews" });
 }
 
+function yearFrom(value?: string): string {
+  return value?.split("-")[0] || "unknown";
+}
+
+function providerNames(providers?: Array<{ provider_name: string }>): string[] {
+  return providers?.map((provider) => provider.provider_name).filter(Boolean) || [];
+}
+
+function compareBestFor(movie: MovieDetails, countryProviders?: WatchProviderResult): string {
+  const genres = movie.genres?.map((genre) => genre.name.toLowerCase()) || [];
+  const streaming = providerNames(countryProviders?.flatrate);
+
+  if (streaming.length > 0) return "Best if you want something available on subscription streaming.";
+  if (movie.runtime && movie.runtime <= 105) return "Best if you want the shortest, easiest watch.";
+  if (movie.vote_average >= 8) return "Best if you want the strongest TMDB rating.";
+  if (genres.some((genre) => ["action", "adventure", "comedy", "family", "animation"].includes(genre))) {
+    return "Best for a lighter group watch.";
+  }
+  if (genres.some((genre) => ["drama", "history", "documentary"].includes(genre))) {
+    return "Best for a more focused, thoughtful watch.";
+  }
+
+  return "Best as a balanced pick across rating, runtime, and genre fit.";
+}
+
+function renderMovieComparison(
+  movies: Array<{ movie: MovieDetails; providers?: WatchProviderResult }>,
+  country: string,
+): string {
+  const lines = [
+    `Movie comparison (${country})`,
+    `Compared ${movies.length} movies by TMDB details and watch-provider availability.`,
+    "",
+  ];
+
+  movies.forEach(({ movie, providers }, index) => {
+    const director = movie.credits?.crew?.find((person) => person.job === "Director")?.name;
+    const cast = movie.credits?.cast?.slice(0, 4).map((person) => person.name).join(", ");
+    const streaming = providerNames(providers?.flatrate);
+    const rent = providerNames(providers?.rent);
+    const buy = providerNames(providers?.buy);
+    const availability = [
+      streaming.length > 0 ? `Streaming: ${streaming.join(", ")}` : null,
+      rent.length > 0 ? `Rent: ${rent.slice(0, 4).join(", ")}` : null,
+      buy.length > 0 ? `Buy: ${buy.slice(0, 4).join(", ")}` : null,
+    ].filter(Boolean).join("\n");
+
+    lines.push(
+      `${index + 1}. ${movie.title} (${yearFrom(movie.release_date)}) - ID: ${movie.id}`,
+      `Rating: ${movie.vote_average}/10`,
+      movie.runtime ? `Runtime: ${movie.runtime} min` : "Runtime: unknown",
+      movie.genres?.length ? `Genres: ${movie.genres.map((genre) => genre.name).join(", ")}` : "Genres: unknown",
+      director ? `Director: ${director}` : "Director: unknown",
+      cast ? `Cast: ${cast}` : "Cast: unknown",
+      availability || `Availability: no providers found for ${country}`,
+      `Best for: ${compareBestFor(movie, providers)}`,
+      `Overview: ${movie.overview}`,
+      "",
+      "---",
+      "",
+    );
+  });
+
+  const sortedByRating = [...movies].sort((a, b) => b.movie.vote_average - a.movie.vote_average);
+  const streamingPicks = movies.filter(({ providers }) => providerNames(providers?.flatrate).length > 0);
+  const shortest = [...movies]
+    .filter(({ movie }) => movie.runtime)
+    .sort((a, b) => (a.movie.runtime || 0) - (b.movie.runtime || 0))[0];
+
+  lines.push("Quick decision");
+  lines.push(`- Highest rated: ${sortedByRating[0].movie.title} (${sortedByRating[0].movie.vote_average}/10)`);
+  if (shortest) lines.push(`- Shortest runtime: ${shortest.movie.title} (${shortest.movie.runtime} min)`);
+  if (streamingPicks.length > 0) {
+    lines.push(`- Streaming in ${country}: ${streamingPicks.map(({ movie }) => movie.title).join(", ")}`);
+  } else {
+    lines.push(`- Streaming in ${country}: none found in TMDB provider data`);
+  }
+
+  return lines.join("\n");
+}
+
 const WEEKLY_TRENDING_LANGUAGES = [
   { label: "English", code: "en" },
   { label: "Hindi", code: "hi" },
@@ -418,6 +499,27 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
           },
           required: ["movieId"],
+        },
+      },
+      {
+        name: "compare_movies",
+        description: "Compare 2 to 5 movies side by side with ratings, runtime, genres, cast, director, watch providers, and best-fit notes",
+        inputSchema: {
+          type: "object",
+          properties: {
+            movieIds: {
+              type: "array",
+              items: { type: "string" },
+              minItems: 2,
+              maxItems: 5,
+              description: "TMDB movie IDs to compare",
+            },
+            country: {
+              type: "string",
+              description: "ISO 3166-1 country code for watch-provider availability. Defaults to IN.",
+            },
+          },
+          required: ["movieIds"],
         },
       },
       {
@@ -821,6 +923,35 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         return {
           content: [{ type: "text", text: lines }],
+          isError: false,
+        };
+      }
+
+      case "compare_movies": {
+        const movieIds = request.params.arguments?.movieIds as string[] | undefined;
+        const country = ((request.params.arguments?.country as string) || "IN").toUpperCase();
+
+        if (!Array.isArray(movieIds) || movieIds.length < 2 || movieIds.length > 5) {
+          return {
+            content: [{ type: "text", text: "compare_movies requires 2 to 5 TMDB movie IDs." }],
+            isError: true,
+          };
+        }
+
+        const comparisons = await Promise.all(movieIds.map(async (movieId) => {
+          const [movie, providersResult] = await Promise.all([
+            getMovieDetails(movieId),
+            fetchFromTMDB<WatchProvidersResponse>(`/movie/${movieId}/watch/providers`).catch(() => undefined),
+          ]);
+
+          return {
+            movie,
+            providers: providersResult?.results?.[country],
+          };
+        }));
+
+        return {
+          content: [{ type: "text", text: renderMovieComparison(comparisons, country) }],
           isError: false,
         };
       }
