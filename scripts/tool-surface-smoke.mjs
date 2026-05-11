@@ -19,6 +19,7 @@ const accessToken = valueAfter("--access-token") || process.env.TMDB_MCP_ACCESS_
 
 const EXPECTED_TOOLS = [
   "advanced_search",
+  "build_franchise_watch_order",
   "compare_movies",
   "find_where_to_watch",
   "get_movie_details",
@@ -254,6 +255,13 @@ async function main() {
     });
     assertIncludes(partyText, "Watch Party Planner", "plan_watch_party");
 
+    const franchiseText = await callToolText(client, "build_franchise_watch_order", {
+      query: "The Matrix",
+      country: "US",
+      maxMovies: "5",
+    });
+    assertIncludes(franchiseText, "Franchise Watch Guide", "build_franchise_watch_order");
+
     const generatedAt = new Date().toISOString();
     const artifact = [
       "# TMDB MCP Tool Surface Smoke",
@@ -291,13 +299,17 @@ async function main() {
       "",
       fenced(excerpt(partyText, 18)),
       "",
+      "### build_franchise_watch_order",
+      "",
+      fenced(excerpt(franchiseText, 18)),
+      "",
     ].join("\n");
 
     await mkdir(path.dirname(outputPath), { recursive: true });
     await writeFile(outputPath, artifact);
 
     console.log(`Tool contract OK: ${actualTools.length} tools.`);
-    console.log("Workflow calls OK: compare_movies, find_where_to_watch, get_weekend_watchlist, plan_watch_party.");
+    console.log("Workflow calls OK: compare_movies, find_where_to_watch, get_weekend_watchlist, plan_watch_party, build_franchise_watch_order.");
     console.log(`Wrote ${outputPath}`);
   } finally {
     await client.close();

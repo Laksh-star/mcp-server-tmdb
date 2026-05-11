@@ -5,6 +5,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { renderConciergeApp } from "./concierge-app";
 import { createWatchPartyPlanner, createWeekendConcierge } from "./concierge";
+import { buildFranchiseWatchOrder, franchiseGuideSummary } from "./franchise";
 
 interface Env {
   TMDB_API_KEY?: string;
@@ -602,6 +603,27 @@ function createTMDBServer(env: Env): McpServer {
         avoidTitles,
       });
       return textResult(watchPartyPlanSummary(result));
+    },
+  );
+
+  server.registerTool(
+    "build_franchise_watch_order",
+    {
+      description: "Build a franchise or universe watch guide with release order, suggested order, total runtime, provider availability, and start/skip guidance",
+      inputSchema: {
+        query: z.string().describe("Franchise or collection query, for example The Matrix, Dune, Batman, or Mission Impossible"),
+        country: z.string().optional().describe("ISO 3166-1 country code for watch-provider availability, defaults to IN"),
+        maxMovies: z.string().optional().describe("Maximum number of collection entries to include, from 2 to 20. Defaults to 12"),
+      },
+      annotations: READ_ONLY_TOOL,
+    },
+    async ({ query, country, maxMovies }) => {
+      const result = await buildFranchiseWatchOrder(env, {
+        query,
+        country,
+        maxMovies,
+      });
+      return textResult(franchiseGuideSummary(result));
     },
   );
 

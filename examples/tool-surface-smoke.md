@@ -1,18 +1,19 @@
 # TMDB MCP Tool Surface Smoke
 
-Generated: 2026-05-11T23:23:38.373Z
+Generated: 2026-05-11T23:35:01.762Z
 Mode: local
 Server: mcp-server-tmdb
 Endpoint: local stdio dist/index.js
 
 ## Tool Contract
 
-Expected tools: 19
-Actual tools: 19
+Expected tools: 20
+Actual tools: 20
 Unexpected tools: none
 
 ```text
 advanced_search
+build_franchise_watch_order
 compare_movies
 find_where_to_watch
 get_movie_details
@@ -89,19 +90,19 @@ Mood: Tense thriller
 Country: US
 Language: Any language
 
-1. GoodFellas - ID: 769
+1. Memento - ID: 77
+2000 | 8.2/10 | 113 min | Mystery, Thriller
+Streaming: Amazon Prime Video, HBO Max, Peacock Premium, Cinemax Amazon Channel, Cinemax Apple TV Channel, Amazon Prime Video with Ads, Peacock Premium Plus
+Why: Fits tense thriller mode; Matches 1 requested service; Strong TMDB rating at 8.2/10
+Overview: Leonard Shelby is tracking down the man who raped and murdered his wife. The difficulty of locating his wife's killer, however, is compounded by the fact that he suffers from a rare, untreatable form of short-term memory loss. Although he can recall details of life before his accident, Leonard cannot remember what happened fifteen minutes ago, where he's going, or why.
+---
+2. GoodFellas - ID: 769
 1990 | 8.5/10 | 145 min | Drama, Crime
 Streaming: Amazon Prime Video, Amazon Prime Video with Ads
 Why: Fits tense thriller mode; Matches 1 requested service; Strong TMDB rating at 8.5/10
 Overview: The true story of Henry Hill, a half-Irish, half-Sicilian Brooklyn kid who is adopted by neighbourhood gangsters at an early age and climbs the ranks of a Mafia family under the guidance of Jimmy Conway.
 ---
-2. The Shawshank Redemption - ID: 278
-1994 | 8.7/10 | 142 min | Drama, Crime
-Streaming: AMC+ Roku Premium Channel, YouTube TV, AMC
-Why: Fits tense thriller mode; Strong TMDB rating at 8.7/10; Streaming in your selected country
-Overview: Imprisoned in the 1940s for the double murder of his wife and her lover, upstanding banker Andy Dufresne begins a new life at the Shawshank prison, where he puts his accounting skills to work for an amoral warden. During his long stretch in prison, Dufresne comes to be admired by the other inmates -- including an older prisoner named Red -- for his integrity and unquenchable sense of hope.
----
-3. Chinatown - ID: 829
+3. Se7en - ID: 807
 ```
 
 ### plan_watch_party
@@ -125,4 +126,27 @@ Party fit: matches 1 requested service; available on subscription streaming; bro
 Why: Fits crowd pleaser mode; Matches 1 requested service; Strong TMDB rating at 8.9/10
 Overview: A small woodland creature and a majestic bird, two natural sworn enemies of the Valley, magically trade places and set off on an adventure of a lifetime to switch back. Their journey soon uncovers a greater threat—one that could endanger not only their species, but the entire valley they call home.
 ---
+```
+
+### build_franchise_watch_order
+
+```text
+Franchise Watch Guide
+Query: The Matrix
+Collection: The Matrix Collection - ID: 2344
+Country: US
+Total runtime: 9h 11m
+
+Decision:
+- Start with The Matrix; release order is the clearest default for this franchise.
+- 2 of 4 entries have subscription streaming data for US.
+
+Release order:
+1. The Matrix (1999) - ID: 603
+Rating: 8.2/10 | Runtime: 2h 16m
+Rent: Apple TV Store, Google Play Movies, YouTube, Fandango At Home
+Note: Start here for release-order context.
+---
+2. The Matrix Reloaded (2003) - ID: 604
+Rating: 7.1/10 | Runtime: 2h 18m
 ```
