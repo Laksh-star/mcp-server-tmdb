@@ -122,6 +122,32 @@ export function renderConciergeApp(): string {
       border: 0;
     }
 
+    .mode-toggle {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      padding: 4px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f4efe7;
+    }
+
+    .mode-option {
+      height: 36px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    .mode-option[aria-pressed="true"] {
+      background: var(--panel);
+      color: #06493f;
+      box-shadow: 0 1px 5px rgba(24, 24, 24, 0.12);
+    }
+
     .moods {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -143,6 +169,10 @@ export function renderConciergeApp(): string {
       background: #e9f5f1;
       color: #06493f;
       font-weight: 700;
+    }
+
+    .party-only[hidden] {
+      display: none;
     }
 
     .service-grid {
@@ -515,6 +545,17 @@ export function renderConciergeApp(): string {
       white-space: nowrap;
     }
 
+    .role {
+      width: fit-content;
+      border-radius: 999px;
+      padding: 5px 8px;
+      color: #06493f;
+      background: #e9f5f1;
+      font-size: 12px;
+      font-weight: 900;
+      line-height: 1.2;
+    }
+
     .facts,
     .providers,
     .reasons {
@@ -650,6 +691,14 @@ export function renderConciergeApp(): string {
 
       <form id="concierge-form">
         <fieldset>
+          <legend>Mode</legend>
+          <div class="mode-toggle" id="mode-toggle">
+            <button class="mode-option" type="button" data-mode="solo" aria-pressed="true">Solo</button>
+            <button class="mode-option" type="button" data-mode="party" aria-pressed="false">Watch Party</button>
+          </div>
+        </fieldset>
+
+        <fieldset>
           <legend>Mood</legend>
           <div class="moods" id="moods">
             <button class="mood" type="button" data-mood="crowd" aria-pressed="true">Crowd</button>
@@ -698,6 +747,16 @@ export function renderConciergeApp(): string {
             <option value="120">Under 2 hours</option>
             <option value="150">Under 2.5 hours</option>
           </select>
+        </div>
+
+        <div class="field party-only" hidden>
+          <label for="groupSize">Group size</label>
+          <input id="groupSize" name="groupSize" type="number" min="1" max="20" step="1" value="5">
+        </div>
+
+        <div class="field party-only" hidden>
+          <label for="avoidTitles">Avoid titles</label>
+          <input id="avoidTitles" name="avoidTitles" type="text" autocomplete="off" placeholder="Comma-separated titles already seen">
         </div>
 
         <div class="field">
@@ -783,7 +842,9 @@ export function renderConciergeApp(): string {
     const runMcpSmoke = document.querySelector("#run-mcp-smoke");
     const mcpOutput = document.querySelector("#mcp-output");
     const mcpSummary = document.querySelector("#mcp-summary");
+    let selectedMode = "solo";
     let selectedMood = "crowd";
+    let selectedMoods = new Set(["crowd"]);
     const expectedTools = [
       "advanced_search",
       "compare_movies",
@@ -791,6 +852,7 @@ export function renderConciergeApp(): string {
       "get_movie_details",
       "get_now_playing",
       "get_person_details",
+      "plan_watch_party",
       "get_recommendations",
       "get_similar_movies",
       "get_trending",
@@ -807,18 +869,58 @@ export function renderConciergeApp(): string {
 
     accessToken.value = sessionStorage.getItem("tmdbConciergeAccessToken") || "";
 
-    document.querySelectorAll(".mood").forEach((button) => {
+    document.querySelectorAll(".mode-option").forEach((button) => {
       button.addEventListener("click", () => {
-        selectedMood = button.dataset.mood;
-        document.querySelectorAll(".mood").forEach((item) => {
+        selectedMode = button.dataset.mode;
+        document.querySelectorAll(".mode-option").forEach((item) => {
           item.setAttribute("aria-pressed", String(item === button));
         });
+        document.querySelectorAll(".party-only").forEach((item) => {
+          item.hidden = selectedMode !== "party";
+        });
+        summary.textContent = selectedMode === "party"
+          ? "Balance a few moods for the group, then generate a primary pick, backup, and wildcard."
+          : "Choose a mood and country, then generate a ranked watchlist with posters, ratings, cast, and streaming availability.";
+      });
+    });
+
+    document.querySelectorAll(".mood").forEach((button) => {
+      button.addEventListener("click", () => {
+        const mood = button.dataset.mood;
+        if (selectedMode === "party") {
+          if (selectedMoods.has(mood) && selectedMoods.size > 1) {
+            selectedMoods.delete(mood);
+          } else {
+            selectedMoods.add(mood);
+          }
+          if (selectedMoods.size > 3) {
+            selectedMoods.delete(selectedMoods.values().next().value);
+          }
+          selectedMood = selectedMoods.values().next().value || "crowd";
+          document.querySelectorAll(".mood").forEach((item) => {
+            item.setAttribute("aria-pressed", String(selectedMoods.has(item.dataset.mood)));
+          });
+        } else {
+          selectedMood = mood;
+          selectedMoods = new Set([mood]);
+          document.querySelectorAll(".mood").forEach((item) => {
+            item.setAttribute("aria-pressed", String(item === button));
+          });
+        }
       });
     });
 
     document.querySelector("#reset").addEventListener("click", () => {
       form.reset();
+      selectedMode = "solo";
       selectedMood = "crowd";
+      selectedMoods = new Set(["crowd"]);
+      document.querySelectorAll(".mode-option").forEach((item) => {
+        item.setAttribute("aria-pressed", String(item.dataset.mode === "solo"));
+      });
+      document.querySelectorAll(".party-only").forEach((item) => {
+        item.hidden = true;
+      });
       document.querySelectorAll(".mood").forEach((item) => {
         item.setAttribute("aria-pressed", String(item.dataset.mood === "crowd"));
       });
@@ -836,14 +938,28 @@ export function renderConciergeApp(): string {
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       const data = new FormData(form);
-      const payload = {
-        mood: selectedMood,
+      const sharedPayload = {
         country: data.get("country"),
         language: data.get("language"),
         runtime: data.get("runtime"),
         minRating: data.get("minRating"),
         services: data.getAll("services"),
       };
+      const payload = selectedMode === "party"
+        ? {
+            ...sharedPayload,
+            moods: Array.from(selectedMoods),
+            groupSize: data.get("groupSize"),
+            avoidTitles: String(data.get("avoidTitles") || "")
+              .split(",")
+              .map((title) => title.trim())
+              .filter(Boolean),
+          }
+        : {
+            ...sharedPayload,
+            mood: selectedMood,
+          };
+      const endpoint = selectedMode === "party" ? "/api/watch-party" : "/api/concierge";
       const token = String(data.get("accessToken") || "").trim();
       if (token) {
         sessionStorage.setItem("tmdbConciergeAccessToken", token);
@@ -858,7 +974,7 @@ export function renderConciergeApp(): string {
       notes.textContent = "";
 
       try {
-        const response = await fetch("/api/concierge", {
+        const response = await fetch(endpoint, {
           method: "POST",
           headers: {
             "content-type": "application/json",
@@ -956,12 +1072,26 @@ export function renderConciergeApp(): string {
               services: ["Netflix", "Prime Video"],
             },
           }),
+          client.rpc("tools/call", {
+            name: "plan_watch_party",
+            arguments: {
+              moods: ["crowd", "thriller"],
+              groupSize: "5",
+              country: "US",
+              language: "any",
+              runtime: "135",
+              minRating: "6.8",
+              services: ["Netflix", "Prime Video"],
+              avoidTitles: ["The Matrix"],
+            },
+          }),
         ]);
 
         const sampleData = [
           { name: "compare_movies", text: textFromToolResult(samples[0]) },
           { name: "find_where_to_watch", text: textFromToolResult(samples[1]) },
           { name: "get_weekend_watchlist", text: textFromToolResult(samples[2]) },
+          { name: "plan_watch_party", text: textFromToolResult(samples[3]) },
         ];
         renderMcpSmoke(toolNames, sampleData);
         statusEl.textContent = "Done";
@@ -1024,13 +1154,17 @@ export function renderConciergeApp(): string {
     }
 
     function renderResult(result) {
-      headline.textContent = result.mood + " picks";
-      summary.textContent = "Ranked for " + result.country + " with " + result.language + " preference.";
+      const isParty = Array.isArray(result.moods);
+      headline.textContent = isParty ? "Watch party plan" : result.mood + " picks";
+      summary.textContent = isParty
+        ? "Primary pick, backup, and wildcard for a group of " + result.groupSize + "."
+        : "Ranked for " + result.country + " with " + result.language + " preference.";
       meta.innerHTML = [
+        isParty ? chip("Group " + result.groupSize) : null,
         chip(result.country),
         chip(result.language),
         chip(new Date(result.generatedAt).toLocaleString()),
-      ].join("");
+      ].filter(Boolean).join("");
 
       if (!result.picks || result.picks.length === 0) {
         output.className = "empty";
@@ -1040,7 +1174,11 @@ export function renderConciergeApp(): string {
 
       output.className = "results";
       output.innerHTML = result.picks.map(renderPick).join("");
-      notes.innerHTML = (result.notes || []).map((note) => "<div>" + escapeHtml(note) + "</div>").join("");
+      const decision = isParty && result.decision
+        ? "<div><strong>Decision</strong></div>" + result.decision.map((line) => "<div>" + escapeHtml(line) + "</div>").join("")
+        : "";
+      const noteHtml = (result.notes || []).map((note) => "<div>" + escapeHtml(note) + "</div>").join("");
+      notes.innerHTML = [decision, noteHtml].filter(Boolean).join("");
     }
 
     function renderPick(pick) {
@@ -1060,16 +1198,19 @@ export function renderConciergeApp(): string {
       const reasons = (pick.reasons || []).map((item) => chip(item, "reason")).join("");
       const cast = (pick.cast || []).length ? "Cast: " + pick.cast.join(", ") : "";
       const director = pick.director ? "Director: " + pick.director : "";
+      const role = pick.partyRole ? "<div class=\\"role\\">" + escapeHtml(pick.partyRole) + "</div>" : "";
+      const partyFit = pick.partyFit ? chip("Party fit: " + pick.partyFit, "reason") : "";
 
       return "<article class=\\"pick\\">" +
         "<div class=\\"poster\\">" + poster + "<div class=\\"score\\">" + escapeHtml(pick.score) + "</div></div>" +
         "<div class=\\"pick-body\\">" +
+          role +
           "<div class=\\"title-row\\"><h3>" + escapeHtml(pick.title) + "</h3><div class=\\"rating\\">" + Number(pick.rating || 0).toFixed(1) + "</div></div>" +
           "<div class=\\"facts\\">" + facts + "</div>" +
           "<p class=\\"overview\\">" + escapeHtml(text(pick.overview).slice(0, 260)) + "</p>" +
           "<div class=\\"credits\\">" + escapeHtml([director, cast].filter(Boolean).join(" | ")) + "</div>" +
           (providers ? "<div class=\\"providers\\">" + providers + "</div>" : "") +
-          "<div class=\\"reasons\\">" + reasons + "</div>" +
+          "<div class=\\"reasons\\">" + partyFit + reasons + "</div>" +
         "</div>" +
       "</article>";
     }

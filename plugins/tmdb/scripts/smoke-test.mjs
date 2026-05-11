@@ -56,6 +56,7 @@ try {
 
   const requiredTools = [
     "search_movies",
+    "plan_watch_party",
     "get_trending",
     "get_weekly_trending_by_language",
     "search_tv_shows",

@@ -24,6 +24,7 @@ const EXPECTED_TOOLS = [
   "get_movie_details",
   "get_now_playing",
   "get_person_details",
+  "plan_watch_party",
   "get_recommendations",
   "get_similar_movies",
   "get_trending",
@@ -241,6 +242,18 @@ async function main() {
     });
     assertIncludes(conciergeText, "Weekend Watch Concierge picks", "get_weekend_watchlist");
 
+    const partyText = await callToolText(client, "plan_watch_party", {
+      moods: ["crowd", "thriller"],
+      groupSize: "5",
+      country: "US",
+      language: "any",
+      runtime: "135",
+      minRating: "6.8",
+      services: ["Netflix", "Prime Video"],
+      avoidTitles: ["The Matrix"],
+    });
+    assertIncludes(partyText, "Watch Party Planner", "plan_watch_party");
+
     const generatedAt = new Date().toISOString();
     const artifact = [
       "# TMDB MCP Tool Surface Smoke",
@@ -274,13 +287,17 @@ async function main() {
       "",
       fenced(excerpt(conciergeText, 18)),
       "",
+      "### plan_watch_party",
+      "",
+      fenced(excerpt(partyText, 18)),
+      "",
     ].join("\n");
 
     await mkdir(path.dirname(outputPath), { recursive: true });
     await writeFile(outputPath, artifact);
 
     console.log(`Tool contract OK: ${actualTools.length} tools.`);
-    console.log("Workflow calls OK: compare_movies, find_where_to_watch, get_weekend_watchlist.");
+    console.log("Workflow calls OK: compare_movies, find_where_to_watch, get_weekend_watchlist, plan_watch_party.");
     console.log(`Wrote ${outputPath}`);
   } finally {
     await client.close();

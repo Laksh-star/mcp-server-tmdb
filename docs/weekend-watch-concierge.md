@@ -4,8 +4,8 @@ Weekend Watch Concierge is a Cloudflare Worker app and remote MCP tool built on 
 
 It has two user surfaces:
 
-- Browser app: ranked movie picks from mood, country, language, runtime, rating, and streaming-service filters.
-- Remote MCP tool: `get_weekend_watchlist`, so agents can ask for the same shortlist through `/mcp`.
+- Browser app: solo picks or Watch Party plans from mood, country, language, runtime, rating, streaming-service, group-size, and avoided-title filters.
+- Remote MCP tools: `get_weekend_watchlist` and `plan_watch_party`, so agents can ask for the same shortlist or group plan through `/mcp`.
 
 ## Screenshots
 
@@ -16,6 +16,10 @@ Blank state:
 Generated desktop results:
 
 ![Weekend Watch Concierge desktop results](assets/weekend-watch-concierge-results.png)
+
+Watch Party mode:
+
+![Weekend Watch Concierge Watch Party mode](assets/weekend-watch-concierge-watch-party.png)
 
 Mobile layout:
 

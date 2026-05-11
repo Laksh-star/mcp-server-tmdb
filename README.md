@@ -6,6 +6,7 @@ An MCP server for The Movie Database (TMDB) API. It provides movie and TV search
 
 ### Movie Discovery
 - **get_weekend_watchlist** — Ranked weekend shortlist by mood, country, language, runtime, rating, and services
+- **plan_watch_party** — Group movie-night plan with a primary pick, backup, wildcard, party-fit reasons, provider availability, and avoided-title filtering
 - **search_movies** — Search by title/keywords → titles, IDs, ratings, overviews
 - **get_trending** — Top 10 trending movies (`timeWindow`: "day" | "week")
 - **get_weekly_trending_by_language** — Weekly trending movies grouped by original language into English, Hindi, and Telugu
@@ -64,7 +65,7 @@ In Codex, a fresh session should show `TMDB` in the plugin list and expose the `
 
 ## Tool Surface Smoke
 
-Use this smoke test after adding or merging tools. It verifies the expected MCP tool contract and calls the main workflow tools: `compare_movies`, `find_where_to_watch`, and `get_weekend_watchlist`.
+Use this smoke test after adding or merging tools. It verifies the expected MCP tool contract and calls the main workflow tools: `compare_movies`, `find_where_to_watch`, `get_weekend_watchlist`, and `plan_watch_party`.
 
 Local stdio MCP:
 
@@ -112,11 +113,11 @@ This repo can also run as a remote MCP server on Cloudflare Workers. The remote 
 
 The existing local stdio server remains unchanged for Codex and local Claude Desktop use. The Cloudflare entrypoint is `src/worker.ts`.
 
-The Worker also serves a browser demo at `/`: **Weekend Watch Concierge**. It asks for mood, country, language, runtime, rating, and streaming services, then builds a ranked movie shortlist using TMDB discovery, trending, now-playing, credits, posters, and watch-provider data.
+The Worker also serves a browser demo at `/`: **Weekend Watch Concierge**. It supports solo picks and Watch Party mode, then builds a ranked movie shortlist using TMDB discovery, trending, now-playing, credits, posters, and watch-provider data.
 
-The browser demo also includes an **MCP tool surface** panel that calls the deployed `/mcp` route, verifies the expected tool contract, and samples `compare_movies`, `find_where_to_watch`, and `get_weekend_watchlist`.
+The browser demo also includes an **MCP tool surface** panel that calls the deployed `/mcp` route, verifies the expected tool contract, and samples `compare_movies`, `find_where_to_watch`, `get_weekend_watchlist`, and `plan_watch_party`.
 
-![Weekend Watch Concierge weekly trend scan](docs/assets/weekend-watch-concierge-weekly-trends.png)
+![Weekend Watch Concierge Watch Party mode](docs/assets/weekend-watch-concierge-watch-party.png)
 
 For the complete browser app, deployed Worker, access-token, and MCP handoff, see `docs/weekend-watch-concierge.md`.
 
@@ -269,6 +270,13 @@ Agents can call `get_weekend_watchlist` with:
 - `runtime`: maximum minutes, for example `120`, `150`, or `any`
 - `minRating`: minimum TMDB rating
 - `services`: preferred streaming services
+
+Agents can call `plan_watch_party` when the decision is for a group. It accepts:
+
+- `moods`: one to three values from `crowd`, `thriller`, `thoughtful`, `funny`, `family`, or `mindbend`
+- `groupSize`: number of people watching
+- `country`, `language`, `runtime`, `minRating`, and `services`: same meaning as the weekend watchlist
+- `avoidTitles`: titles the group has already seen or wants excluded
 
 ## Cloudflare MCP Demo Workflow
 

@@ -58,6 +58,7 @@ console.log(toolNames.join(", "));
 
 const required = [
   "get_weekend_watchlist",
+  "plan_watch_party",
   "search_movies",
   "get_trending",
   "get_weekly_trending_by_language",

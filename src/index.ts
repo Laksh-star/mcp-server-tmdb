@@ -21,7 +21,7 @@ import {
   ListToolsRequestSchema,
   ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { createWeekendConcierge } from "./concierge.js";
+import { createWatchPartyPlanner, createWeekendConcierge } from "./concierge.js";
 
 // Type definitions
 interface Movie {
@@ -397,6 +397,40 @@ function conciergeSummary(result: Awaited<ReturnType<typeof createWeekendConcier
     notes;
 }
 
+function watchPartyPlanSummary(result: Awaited<ReturnType<typeof createWatchPartyPlanner>>): string {
+  const picks = result.picks
+    .map((pick, index) => {
+      const providers = pick.providers.streaming.length > 0
+        ? `Streaming: ${pick.providers.streaming.join(", ")}`
+        : "Streaming: no subscription provider found";
+      const facts = [
+        `${pick.year}`,
+        `${pick.rating.toFixed(1)}/10`,
+        pick.runtime ? `${pick.runtime} min` : null,
+        pick.genres.length > 0 ? pick.genres.slice(0, 3).join(", ") : null,
+      ].filter(Boolean).join(" | ");
+
+      return `${index + 1}. ${pick.partyRole}: ${pick.title} - ID: ${pick.id}\n` +
+        `${facts}\n` +
+        `${providers}\n` +
+        `Party fit: ${pick.partyFit}\n` +
+        `Why: ${pick.reasons.join("; ")}\n` +
+        `Overview: ${pick.overview}`;
+    })
+    .join("\n---\n");
+
+  const notes = result.notes.length > 0 ? `\n\nNotes:\n${result.notes.map((note) => `- ${note}`).join("\n")}` : "";
+
+  return `Watch Party Planner\n` +
+    `Group size: ${result.groupSize}\n` +
+    `Country: ${result.country}\n` +
+    `Language: ${result.language}\n` +
+    `Moods: ${result.moods.join(", ")}\n\n` +
+    `Decision:\n${result.decision.map((line) => `- ${line}`).join("\n")}\n\n` +
+    `${picks || "No matching party picks found."}` +
+    notes;
+}
+
 const WEEKLY_TRENDING_LANGUAGES = [
   { label: "English", code: "en" },
   { label: "Hindi", code: "hi" },
@@ -514,6 +548,53 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               type: "array",
               items: { type: "string" },
               description: "Preferred streaming services, for example Netflix or Prime Video.",
+            },
+          },
+        },
+      },
+      {
+        name: "plan_watch_party",
+        description: "Plan a group movie night by merging mood scans, provider availability, runtime fit, ratings, and avoided titles into a primary pick, backup pick, and wildcard",
+        inputSchema: {
+          type: "object",
+          properties: {
+            moods: {
+              type: "array",
+              items: {
+                type: "string",
+                enum: ["crowd", "thriller", "thoughtful", "funny", "family", "mindbend"],
+              },
+              description: "One to three viewing moods to balance for the group. Defaults to crowd.",
+            },
+            groupSize: {
+              type: "string",
+              description: "Number of people watching. Defaults to 4.",
+            },
+            country: {
+              type: "string",
+              description: "ISO 3166-1 country code for watch providers. Defaults to IN.",
+            },
+            language: {
+              type: "string",
+              description: "Original language code such as en, hi, ta, te, ko, or any.",
+            },
+            runtime: {
+              type: "string",
+              description: "Maximum runtime in minutes, or any. Defaults tighter for larger groups.",
+            },
+            minRating: {
+              type: "string",
+              description: "Minimum TMDB rating from 0 to 9. Defaults to 6.8.",
+            },
+            services: {
+              type: "array",
+              items: { type: "string" },
+              description: "Preferred streaming services, for example Netflix or Prime Video.",
+            },
+            avoidTitles: {
+              type: "array",
+              items: { type: "string" },
+              description: "Titles the group has already seen or wants to avoid.",
             },
           },
         },
@@ -824,6 +905,30 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         return {
           content: [{ type: "text", text: conciergeSummary(result) }],
+          isError: false,
+        };
+      }
+
+      case "plan_watch_party": {
+        const result = await createWatchPartyPlanner(
+          {
+            TMDB_API_KEY,
+            TMDB_BASE_URL,
+          },
+          {
+            moods: request.params.arguments?.moods as string[] | undefined,
+            groupSize: request.params.arguments?.groupSize as string | undefined,
+            country: request.params.arguments?.country as string | undefined,
+            language: request.params.arguments?.language as string | undefined,
+            runtime: request.params.arguments?.runtime as string | undefined,
+            minRating: request.params.arguments?.minRating as string | undefined,
+            services: request.params.arguments?.services as string[] | undefined,
+            avoidTitles: request.params.arguments?.avoidTitles as string[] | undefined,
+          },
+        );
+
+        return {
+          content: [{ type: "text", text: watchPartyPlanSummary(result) }],
           isError: false,
         };
       }

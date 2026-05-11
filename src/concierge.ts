@@ -12,6 +12,17 @@ interface ConciergeInput {
   services?: string[];
 }
 
+interface WatchPartyPlannerInput {
+  country?: string;
+  language?: string;
+  moods?: string[];
+  groupSize?: string;
+  runtime?: string;
+  minRating?: string;
+  services?: string[];
+  avoidTitles?: string[];
+}
+
 interface MovieSummary {
   id: number;
   title: string;
@@ -93,6 +104,22 @@ export interface ConciergeResult {
   notes: string[];
 }
 
+export interface WatchPartyPlanPick extends ConciergePick {
+  partyRole: string;
+  partyFit: string;
+}
+
+export interface WatchPartyPlanResult {
+  generatedAt: string;
+  country: string;
+  language: string;
+  groupSize: number;
+  moods: string[];
+  picks: WatchPartyPlanPick[];
+  decision: string[];
+  notes: string[];
+}
+
 const MOODS: Record<string, MoodProfile> = {
   crowd: {
     label: "Crowd pleaser",
@@ -158,6 +185,19 @@ function normalizeLanguage(language?: string): string {
 
 function normalizeMood(mood?: string): string {
   return MOODS[mood || "crowd"] ? mood || "crowd" : "crowd";
+}
+
+function normalizeMoods(moods?: string[]): string[] {
+  const normalized = (moods || [])
+    .map((mood) => normalizeMood(mood))
+    .filter(Boolean);
+  return Array.from(new Set(normalized.length > 0 ? normalized : ["crowd"])).slice(0, 3);
+}
+
+function parseGroupSize(groupSize?: string): number {
+  const parsed = Number(groupSize || "4");
+  if (!Number.isFinite(parsed)) return 4;
+  return Math.min(20, Math.max(1, Math.round(parsed)));
 }
 
 function yearFrom(date?: string): string {
@@ -340,6 +380,56 @@ function pickFromDetails(
   };
 }
 
+function titleKey(title: string): string {
+  return title.trim().toLowerCase().replace(/^the\s+/, "");
+}
+
+function mergeConciergePicks(results: ConciergeResult[]): ConciergePick[] {
+  const seen = new Map<number, ConciergePick>();
+  for (const result of results) {
+    for (const pick of result.picks) {
+      const existing = seen.get(pick.id);
+      if (!existing || pick.score > existing.score) {
+        seen.set(pick.id, pick);
+      }
+    }
+  }
+  return Array.from(seen.values());
+}
+
+function partyFitFor(pick: ConciergePick, groupSize: number, requestedServices: string[]): { score: number; fit: string } {
+  const genreText = pick.genres.join(" ").toLowerCase();
+  const availableProviders = [
+    ...pick.providers.streaming,
+    ...pick.providers.rent,
+    ...pick.providers.buy,
+  ];
+  const serviceMatches = serviceMatchScore(availableProviders, requestedServices);
+  const isEasyRuntime = Boolean(pick.runtime && pick.runtime <= 125);
+  const isLong = Boolean(pick.runtime && pick.runtime > 155);
+  const isGroupFriendlyGenre = /action|adventure|comedy|family|animation|fantasy/.test(genreText);
+  const isHeavyGenre = /drama|history|documentary|war/.test(genreText);
+
+  let score = pick.score;
+  score += serviceMatches * 12;
+  if (pick.providers.streaming.length > 0) score += 10;
+  if (groupSize >= 5 && isGroupFriendlyGenre) score += 12;
+  if (groupSize >= 5 && isHeavyGenre) score -= 6;
+  if (isEasyRuntime) score += 8;
+  if (isLong && groupSize >= 4) score -= 10;
+  if (pick.rating >= 7.5) score += 6;
+
+  const fit: string[] = [];
+  if (serviceMatches > 0) fit.push(`matches ${serviceMatches} requested service${serviceMatches > 1 ? "s" : ""}`);
+  if (pick.providers.streaming.length > 0) fit.push("available on subscription streaming");
+  if (groupSize >= 5 && isGroupFriendlyGenre) fit.push("broad group-friendly genre fit");
+  if (isEasyRuntime) fit.push(`easy ${pick.runtime} minute runtime`);
+  if (pick.rating >= 7.5) fit.push(`strong ${pick.rating.toFixed(1)}/10 TMDB rating`);
+  if (fit.length === 0) fit.push("balanced across rating, runtime, and availability");
+
+  return { score, fit: fit.slice(0, 3).join("; ") };
+}
+
 export async function createWeekendConcierge(
   env: Env,
   rawInput: ConciergeInput,
@@ -423,6 +513,85 @@ export async function createWeekendConcierge(
     language: LANGUAGE_LABELS[language] || language,
     mood: profile.label,
     picks,
+    notes,
+  };
+}
+
+export async function createWatchPartyPlanner(
+  env: Env,
+  rawInput: WatchPartyPlannerInput,
+): Promise<WatchPartyPlanResult> {
+  const country = normalizeCountry(rawInput.country);
+  const language = normalizeLanguage(rawInput.language);
+  const moods = normalizeMoods(rawInput.moods);
+  const groupSize = parseGroupSize(rawInput.groupSize);
+  const runtime = rawInput.runtime || (groupSize >= 5 ? "130" : "150");
+  const minRating = rawInput.minRating || "6.8";
+  const requestedServices = (rawInput.services || []).map((service) => service.trim()).filter(Boolean);
+  const avoided = new Set((rawInput.avoidTitles || []).map(titleKey).filter(Boolean));
+
+  const conciergeResults = await Promise.all(
+    moods.map((mood) =>
+      createWeekendConcierge(env, {
+        mood,
+        country,
+        language,
+        runtime,
+        minRating,
+        services: requestedServices,
+      }),
+    ),
+  );
+
+  const ranked = mergeConciergePicks(conciergeResults)
+    .filter((pick) => !avoided.has(titleKey(pick.title)))
+    .map((pick) => {
+      const partyFit = partyFitFor(pick, groupSize, requestedServices);
+      return {
+        ...pick,
+        score: Math.round(partyFit.score),
+        partyFit: partyFit.fit,
+      };
+    })
+    .sort((a, b) => b.score - a.score);
+
+  const roles = ["Primary pick", "Backup pick", "Wild card"];
+  const picks = ranked.slice(0, 3).map((pick, index) => ({
+    ...pick,
+    partyRole: roles[index] || "Alternate",
+  }));
+
+  const decision = picks.length > 0
+    ? [
+        `Start with ${picks[0].title}; it has the strongest party-fit score for this group.`,
+        picks[1] ? `Keep ${picks[1].title} as the safer fallback if availability or mood is off.` : undefined,
+        picks[2] ? `Use ${picks[2].title} as the wildcard if the group wants a different flavor.` : undefined,
+      ].filter((line): line is string => Boolean(line))
+    : ["No matching party picks found with the current filters."];
+
+  const notes = [
+    `Planner merged ${moods.length} mood scan${moods.length > 1 ? "s" : ""} and ranked for a group of ${groupSize}.`,
+    requestedServices.length > 0
+      ? "Requested streaming services boost the party-fit score when TMDB provider data matches."
+      : "Add streaming services to make the plan more action-ready.",
+  ];
+
+  const nestedNotes = conciergeResults.flatMap((result) => result.notes);
+  for (const note of nestedNotes) {
+    if (!notes.includes(note)) notes.push(note);
+  }
+  if (avoided.size > 0) {
+    notes.push("Avoided titles were excluded by normalized title match.");
+  }
+
+  return {
+    generatedAt: new Date().toISOString(),
+    country,
+    language: LANGUAGE_LABELS[language] || language,
+    groupSize,
+    moods: moods.map((mood) => MOODS[mood].label),
+    picks,
+    decision,
     notes,
   };
 }
