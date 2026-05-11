@@ -22,6 +22,7 @@ import {
   ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { createWatchPartyPlanner, createWeekendConcierge } from "./concierge.js";
+import { buildFranchiseWatchOrder, franchiseGuideSummary } from "./franchise.js";
 
 // Type definitions
 interface Movie {
@@ -600,6 +601,28 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         },
       },
       {
+        name: "build_franchise_watch_order",
+        description: "Build a franchise or universe watch guide with release order, suggested order, total runtime, provider availability, and start/skip guidance",
+        inputSchema: {
+          type: "object",
+          properties: {
+            query: {
+              type: "string",
+              description: "Franchise or collection query, for example The Matrix, Dune, Batman, or Mission Impossible.",
+            },
+            country: {
+              type: "string",
+              description: "ISO 3166-1 country code for watch-provider availability. Defaults to IN.",
+            },
+            maxMovies: {
+              type: "string",
+              description: "Maximum number of collection entries to include, from 2 to 20. Defaults to 12.",
+            },
+          },
+          required: ["query"],
+        },
+      },
+      {
         name: "search_movies",
         description: "Search for movies by title or keywords",
         inputSchema: {
@@ -929,6 +952,25 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         return {
           content: [{ type: "text", text: watchPartyPlanSummary(result) }],
+          isError: false,
+        };
+      }
+
+      case "build_franchise_watch_order": {
+        const result = await buildFranchiseWatchOrder(
+          {
+            TMDB_API_KEY,
+            TMDB_BASE_URL,
+          },
+          {
+            query: request.params.arguments?.query as string | undefined,
+            country: request.params.arguments?.country as string | undefined,
+            maxMovies: request.params.arguments?.maxMovies as string | undefined,
+          },
+        );
+
+        return {
+          content: [{ type: "text", text: franchiseGuideSummary(result) }],
           isError: false,
         };
       }

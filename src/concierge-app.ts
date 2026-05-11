@@ -847,6 +847,7 @@ export function renderConciergeApp(): string {
     let selectedMoods = new Set(["crowd"]);
     const expectedTools = [
       "advanced_search",
+      "build_franchise_watch_order",
       "compare_movies",
       "find_where_to_watch",
       "get_movie_details",
@@ -1085,6 +1086,10 @@ export function renderConciergeApp(): string {
               avoidTitles: ["The Matrix"],
             },
           }),
+          client.rpc("tools/call", {
+            name: "build_franchise_watch_order",
+            arguments: { query: "The Matrix", country: "US", maxMovies: "5" },
+          }),
         ]);
 
         const sampleData = [
@@ -1092,6 +1097,7 @@ export function renderConciergeApp(): string {
           { name: "find_where_to_watch", text: textFromToolResult(samples[1]) },
           { name: "get_weekend_watchlist", text: textFromToolResult(samples[2]) },
           { name: "plan_watch_party", text: textFromToolResult(samples[3]) },
+          { name: "build_franchise_watch_order", text: textFromToolResult(samples[4]) },
         ];
         renderMcpSmoke(toolNames, sampleData);
         statusEl.textContent = "Done";
