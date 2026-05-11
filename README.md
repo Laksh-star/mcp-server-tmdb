@@ -2,6 +2,8 @@
 
 An MCP server for The Movie Database (TMDB) API. It provides movie and TV search, streaming availability, cast and crew details, and recommendations for assistants such as Codex and Claude Desktop.
 
+For the architecture split between the reusable MCP server and higher-level feature workflows, see [USERGUIDE.md](USERGUIDE.md).
+
 ## Tools
 
 ### Movie Discovery
