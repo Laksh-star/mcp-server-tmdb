@@ -57,6 +57,7 @@ try {
   const requiredTools = [
     "build_franchise_watch_order",
     "search_movies",
+    "recommend_from_taste_profile",
     "plan_watch_party",
     "get_trending",
     "get_weekly_trending_by_language",

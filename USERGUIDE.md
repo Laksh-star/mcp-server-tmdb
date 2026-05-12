@@ -34,6 +34,7 @@ Expose a feature as an MCP tool when it is something a user or agent would ask f
 - `get_weekend_watchlist`: "Find me something to watch this weekend."
 - `plan_watch_party`: "Pick a movie for a group."
 - `build_franchise_watch_order`: "What order should I watch this franchise?"
+- `recommend_from_taste_profile`: "Recommend something based on what I like and dislike."
 - `compare_movies`: "Help me choose between these movies."
 - `find_where_to_watch`: "Where can I watch these titles?"
 
@@ -87,6 +88,7 @@ If a feature fails those checks, keep it as shared code or a script until it pro
 | `get_weekend_watchlist` | Find a ranked shortlist for tonight or the weekend | Solo or simple household viewing |
 | `plan_watch_party` | Pick for a group with mixed moods and constraints | Group watch decisions |
 | `build_franchise_watch_order` | Decide how to watch a franchise or universe | Multi-movie watch planning |
+| `recommend_from_taste_profile` | Recommend from liked and disliked titles | Personalized discovery |
 | `compare_movies` | Choose between known movie IDs | Side-by-side tradeoffs |
 | `find_where_to_watch` | Check availability for one or more titles | Actionable provider lookup |
 
@@ -94,29 +96,23 @@ If a feature fails those checks, keep it as shared code or a script until it pro
 
 Recommended next features, in order:
 
-1. **Taste Profile Recommendations**
-   - Tool: `recommend_from_taste_profile`
-   - Inputs: liked movies, disliked movies, country, services, runtime, language
-   - Output: ranked picks with "why it matches" and "why it may not" notes
-   - Why next: it is a durable user intent and reuses recommendations, similar movies, providers, and scoring.
-
-2. **Actor / Director Watch Path**
+1. **Actor / Director Watch Path**
    - Tool: `build_person_watch_path`
    - Inputs: person name, country, services, max titles
    - Output: starter pick, best-rated pick, recent pick, hidden gem, and available-now pick
    - Why: it turns existing person search/details into a decision workflow.
 
-3. **Weekly Streaming Radar**
+2. **Weekly Streaming Radar**
    - Tool or script first: start as `scripts/weekly-streaming-radar.mjs`
    - Output: Markdown brief with trending titles, provider-aware picks, language groups, and skip notes
    - Why: useful recurring artifact, but it should prove itself as a script before becoming an MCP tool.
 
-4. **Family-Safe Filtered Picks**
+3. **Family-Safe Filtered Picks**
    - Tool: likely an extension to `get_weekend_watchlist` or `plan_watch_party`, not a new tool
    - Inputs: age range, max rating level, runtime, country, services
    - Why: valuable, but probably belongs inside existing watchlist/planner workflows to avoid tool bloat.
 
-5. **Release Calendar Watchlist**
+4. **Release Calendar Watchlist**
    - Tool or script: start as a script
    - Output: upcoming releases by country/language/genre with "watch later" notes
    - Why: useful, but more time-sensitive and less decision-complete than the top two.

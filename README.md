@@ -10,6 +10,7 @@ For the architecture split between the reusable MCP server and higher-level feat
 - **get_weekend_watchlist** — Ranked weekend shortlist by mood, country, language, runtime, rating, and services
 - **plan_watch_party** — Group movie-night plan with a primary pick, backup, wildcard, party-fit reasons, provider availability, and avoided-title filtering
 - **build_franchise_watch_order** — Franchise/universe guide with release order, suggested order, total runtime, and provider-aware notes
+- **recommend_from_taste_profile** — Recommendations from liked/disliked titles with provider-aware scoring, match reasons, and cautions
 - **search_movies** — Search by title/keywords → titles, IDs, ratings, overviews
 - **get_trending** — Top 10 trending movies (`timeWindow`: "day" | "week")
 - **get_weekly_trending_by_language** — Weekly trending movies grouped by original language into English, Hindi, and Telugu
@@ -68,7 +69,7 @@ In Codex, a fresh session should show `TMDB` in the plugin list and expose the `
 
 ## Tool Surface Smoke
 
-Use this smoke test after adding or merging tools. It verifies the expected MCP tool contract and calls the main workflow tools: `compare_movies`, `find_where_to_watch`, `get_weekend_watchlist`, `plan_watch_party`, and `build_franchise_watch_order`.
+Use this smoke test after adding or merging tools. It verifies the expected MCP tool contract and calls the main workflow tools: `compare_movies`, `find_where_to_watch`, `get_weekend_watchlist`, `plan_watch_party`, `build_franchise_watch_order`, and `recommend_from_taste_profile`.
 
 Local stdio MCP:
 
@@ -118,7 +119,7 @@ The existing local stdio server remains unchanged for Codex and local Claude Des
 
 The Worker also serves a browser demo at `/`: **Weekend Watch Concierge**. It supports solo picks and Watch Party mode, then builds a ranked movie shortlist using TMDB discovery, trending, now-playing, credits, posters, and watch-provider data.
 
-The browser demo also includes an **MCP tool surface** panel that calls the deployed `/mcp` route, verifies the expected tool contract, and samples `compare_movies`, `find_where_to_watch`, `get_weekend_watchlist`, `plan_watch_party`, and `build_franchise_watch_order`.
+The browser demo also includes an **MCP tool surface** panel that calls the deployed `/mcp` route, verifies the expected tool contract, and samples `compare_movies`, `find_where_to_watch`, `get_weekend_watchlist`, `plan_watch_party`, `build_franchise_watch_order`, and `recommend_from_taste_profile`.
 
 ![Weekend Watch Concierge Watch Party mode](docs/assets/weekend-watch-concierge-watch-party.png)
 
@@ -286,6 +287,13 @@ Agents can call `build_franchise_watch_order` for a collection or universe guide
 - `query`: franchise or collection name, for example `The Matrix`, `Dune`, `Batman`, or `Mission Impossible`
 - `country`: watch-provider region, for example `IN` or `US`
 - `maxMovies`: maximum collection entries to include, from 2 to 20
+
+Agents can call `recommend_from_taste_profile` for personalized recommendations. It accepts:
+
+- `likedTitles`: one to five movies the user likes
+- `dislikedTitles`: optional movies the user dislikes or wants to avoid stylistically
+- `country`, `services`, `language`, `runtime`, and `minRating`: filters and watch-now preferences
+- `maxResults`: number of recommendations to return, from 3 to 10
 
 ## Cloudflare MCP Demo Workflow
 

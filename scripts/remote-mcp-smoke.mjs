@@ -60,6 +60,7 @@ const required = [
   "build_franchise_watch_order",
   "get_weekend_watchlist",
   "plan_watch_party",
+  "recommend_from_taste_profile",
   "search_movies",
   "get_trending",
   "get_weekly_trending_by_language",

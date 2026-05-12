@@ -26,6 +26,7 @@ const EXPECTED_TOOLS = [
   "get_now_playing",
   "get_person_details",
   "plan_watch_party",
+  "recommend_from_taste_profile",
   "get_recommendations",
   "get_similar_movies",
   "get_trending",
@@ -262,6 +263,18 @@ async function main() {
     });
     assertIncludes(franchiseText, "Franchise Watch Guide", "build_franchise_watch_order");
 
+    const tasteText = await callToolText(client, "recommend_from_taste_profile", {
+      likedTitles: ["The Matrix", "Inception"],
+      dislikedTitles: ["The Notebook"],
+      country: "US",
+      services: ["Netflix", "Prime Video"],
+      language: "any",
+      runtime: "160",
+      minRating: "6.7",
+      maxResults: "5",
+    });
+    assertIncludes(tasteText, "Taste Profile Recommendations", "recommend_from_taste_profile");
+
     const generatedAt = new Date().toISOString();
     const artifact = [
       "# TMDB MCP Tool Surface Smoke",
@@ -303,13 +316,17 @@ async function main() {
       "",
       fenced(excerpt(franchiseText, 18)),
       "",
+      "### recommend_from_taste_profile",
+      "",
+      fenced(excerpt(tasteText, 18)),
+      "",
     ].join("\n");
 
     await mkdir(path.dirname(outputPath), { recursive: true });
     await writeFile(outputPath, artifact);
 
     console.log(`Tool contract OK: ${actualTools.length} tools.`);
-    console.log("Workflow calls OK: compare_movies, find_where_to_watch, get_weekend_watchlist, plan_watch_party, build_franchise_watch_order.");
+    console.log("Workflow calls OK: compare_movies, find_where_to_watch, get_weekend_watchlist, plan_watch_party, build_franchise_watch_order, recommend_from_taste_profile.");
     console.log(`Wrote ${outputPath}`);
   } finally {
     await client.close();

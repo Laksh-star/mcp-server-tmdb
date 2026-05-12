@@ -6,6 +6,7 @@ import { z } from "zod";
 import { renderConciergeApp } from "./concierge-app";
 import { createWatchPartyPlanner, createWeekendConcierge } from "./concierge";
 import { buildFranchiseWatchOrder, franchiseGuideSummary } from "./franchise";
+import { recommendFromTasteProfile, tasteProfileSummary } from "./taste";
 
 interface Env {
   TMDB_API_KEY?: string;
@@ -624,6 +625,37 @@ function createTMDBServer(env: Env): McpServer {
         maxMovies,
       });
       return textResult(franchiseGuideSummary(result));
+    },
+  );
+
+  server.registerTool(
+    "recommend_from_taste_profile",
+    {
+      description: "Recommend movies from liked and disliked titles with provider-aware scoring, match reasons, and watch-out notes",
+      inputSchema: {
+        likedTitles: z.array(z.string()).min(1).max(5).describe("Movies the user likes. At least one is required."),
+        dislikedTitles: z.array(z.string()).max(5).optional().describe("Movies the user dislikes or wants to avoid stylistically"),
+        country: z.string().optional().describe("ISO 3166-1 country code for watch-provider availability, defaults to IN"),
+        services: z.array(z.string()).optional().describe("Preferred streaming services, for example Netflix or Prime Video"),
+        language: z.string().optional().describe("Original language code such as en, hi, ta, te, ko, or any"),
+        runtime: z.string().optional().describe("Maximum runtime in minutes, or any"),
+        minRating: z.string().optional().describe("Minimum TMDB rating from 0 to 9, defaults to 6.7"),
+        maxResults: z.string().optional().describe("Number of recommendations to return, from 3 to 10. Defaults to 6"),
+      },
+      annotations: READ_ONLY_TOOL,
+    },
+    async ({ likedTitles, dislikedTitles, country, services, language, runtime, minRating, maxResults }) => {
+      const result = await recommendFromTasteProfile(env, {
+        likedTitles,
+        dislikedTitles,
+        country,
+        services,
+        language,
+        runtime,
+        minRating,
+        maxResults,
+      });
+      return textResult(tasteProfileSummary(result));
     },
   );
 

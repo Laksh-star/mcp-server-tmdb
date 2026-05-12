@@ -23,6 +23,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { createWatchPartyPlanner, createWeekendConcierge } from "./concierge.js";
 import { buildFranchiseWatchOrder, franchiseGuideSummary } from "./franchise.js";
+import { recommendFromTasteProfile, tasteProfileSummary } from "./taste.js";
 
 // Type definitions
 interface Movie {
@@ -623,6 +624,54 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         },
       },
       {
+        name: "recommend_from_taste_profile",
+        description: "Recommend movies from liked and disliked titles with provider-aware scoring, match reasons, and watch-out notes",
+        inputSchema: {
+          type: "object",
+          properties: {
+            likedTitles: {
+              type: "array",
+              items: { type: "string" },
+              minItems: 1,
+              maxItems: 5,
+              description: "Movies the user likes. At least one is required.",
+            },
+            dislikedTitles: {
+              type: "array",
+              items: { type: "string" },
+              maxItems: 5,
+              description: "Optional movies the user dislikes or wants to avoid stylistically.",
+            },
+            country: {
+              type: "string",
+              description: "ISO 3166-1 country code for watch-provider availability. Defaults to IN.",
+            },
+            services: {
+              type: "array",
+              items: { type: "string" },
+              description: "Preferred streaming services, for example Netflix or Prime Video.",
+            },
+            language: {
+              type: "string",
+              description: "Original language code such as en, hi, ta, te, ko, or any.",
+            },
+            runtime: {
+              type: "string",
+              description: "Maximum runtime in minutes, or any.",
+            },
+            minRating: {
+              type: "string",
+              description: "Minimum TMDB rating from 0 to 9. Defaults to 6.7.",
+            },
+            maxResults: {
+              type: "string",
+              description: "Number of recommendations to return, from 3 to 10. Defaults to 6.",
+            },
+          },
+          required: ["likedTitles"],
+        },
+      },
+      {
         name: "search_movies",
         description: "Search for movies by title or keywords",
         inputSchema: {
@@ -971,6 +1020,30 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         return {
           content: [{ type: "text", text: franchiseGuideSummary(result) }],
+          isError: false,
+        };
+      }
+
+      case "recommend_from_taste_profile": {
+        const result = await recommendFromTasteProfile(
+          {
+            TMDB_API_KEY,
+            TMDB_BASE_URL,
+          },
+          {
+            likedTitles: request.params.arguments?.likedTitles as string[] | undefined,
+            dislikedTitles: request.params.arguments?.dislikedTitles as string[] | undefined,
+            country: request.params.arguments?.country as string | undefined,
+            services: request.params.arguments?.services as string[] | undefined,
+            language: request.params.arguments?.language as string | undefined,
+            runtime: request.params.arguments?.runtime as string | undefined,
+            minRating: request.params.arguments?.minRating as string | undefined,
+            maxResults: request.params.arguments?.maxResults as string | undefined,
+          },
+        );
+
+        return {
+          content: [{ type: "text", text: tasteProfileSummary(result) }],
           isError: false,
         };
       }

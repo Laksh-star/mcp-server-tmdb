@@ -1,14 +1,14 @@
 # TMDB MCP Tool Surface Smoke
 
-Generated: 2026-05-11T23:35:01.762Z
+Generated: 2026-05-12T00:18:16.750Z
 Mode: local
 Server: mcp-server-tmdb
 Endpoint: local stdio dist/index.js
 
 ## Tool Contract
 
-Expected tools: 20
-Actual tools: 20
+Expected tools: 21
+Actual tools: 21
 Unexpected tools: none
 
 ```text
@@ -27,6 +27,7 @@ get_watch_providers
 get_weekend_watchlist
 get_weekly_trending_by_language
 plan_watch_party
+recommend_from_taste_profile
 search_by_genre
 search_by_keyword
 search_movies
@@ -67,7 +68,7 @@ Preferred services: HBO, Netflix
 
 1. The Matrix
 Matched: The Matrix (1999) - ID: 603
-Rating: 8.244/10
+Rating: 8.2/10
 Rent: Apple TV Store, Google Play Movies, YouTube, Fandango At Home, Spectrum On Demand
 Buy: Apple TV Store, Google Play Movies, YouTube, Fandango At Home
 TMDB watch link: https://www.themoviedb.org/movie/603-the-matrix/watch?locale=US
@@ -76,10 +77,10 @@ Preferred service match: none found
 2. The Dark Knight
 Matched: The Dark Knight (2008) - ID: 155
 Rating: 8.53/10
-Streaming: HBO Max, HBO Max Amazon Channel
-Rent: Amazon Video, Apple TV Store, Google Play Movies, YouTube, Fandango At Home
-Buy: Amazon Video, Apple TV Store, Google Play Movies, YouTube, Fandango At Home
-TMDB watch link: https://www.themoviedb.org/movie/155-the-dark-knight/watch?locale=US
+No watch providers found for US.
+Preferred service match: none found
+
+Quick decision
 ```
 
 ### get_weekend_watchlist
@@ -149,4 +150,27 @@ Note: Start here for release-order context.
 ---
 2. The Matrix Reloaded (2003) - ID: 604
 Rating: 7.1/10 | Runtime: 2h 18m
+```
+
+### recommend_from_taste_profile
+
+```text
+Taste Profile Recommendations
+Liked: The Matrix, Inception
+Disliked: The Notebook
+Country: US
+Language: any
+
+Decision:
+- Start with The Creator; it has the strongest taste-fit score.
+- Use Terminator 2: Judgment Day as the safer alternate if availability or mood changes.
+- Requested services were boosted when TMDB provider data matched.
+
+1. The Creator (2023) - ID: 670292
+Rating: 7.0/10 | Runtime: 2h 14m | Score: 155
+Genres: Science Fiction, Action, Adventure
+Streaming: Netflix, Netflix Standard with Ads
+Why it matches: shares 3 liked genres; matches 1 requested service; available on subscription streaming; fits 134 minute runtime
+Overview: Amid a future war between the human race and the forces of artificial intelligence, a hardened ex-special forces agent grieving the disappearance of his wife, is recruited to hunt down and kill the Creator, the elusive architect of advanced AI who has developed a mysterious weapon with the power to end the war—and mankind itself.
+---
 ```
