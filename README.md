@@ -135,6 +135,29 @@ The script writes:
 examples/weekly-streaming-radar.md
 ```
 
+## Release Calendar Watchlist
+
+The release calendar is also script-first. It creates a Markdown artifact for upcoming or recent release-window scanning, watch-later candidates, family-safe baselines, and provider probes.
+
+Local stdio MCP:
+
+```bash
+npm run build
+set -a && source ./.env && set +a && npm run demo:release-calendar -- --country US --days 90
+```
+
+Cloudflare-hosted MCP:
+
+```bash
+TMDB_MCP_ACCESS_TOKEN=<your-access-token> node scripts/release-calendar-watchlist.mjs --mcp-url https://tmdb-mcp.<your-workers-subdomain>.workers.dev/mcp --country US --days 90
+```
+
+The script writes:
+
+```text
+examples/release-calendar-watchlist.md
+```
+
 ## Remote MCP on Cloudflare Workers
 
 This repo can also run as a remote MCP server on Cloudflare Workers. The remote server exposes the same TMDB tools at `/mcp` over Streamable HTTP, so Claude, Cowork, Claude Desktop connectors, and other remote-MCP clients can connect to a public URL.

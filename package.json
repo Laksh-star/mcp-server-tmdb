@@ -16,7 +16,8 @@
     "smoke:tools": "node scripts/tool-surface-smoke.mjs",
     "demo:weekly-trending": "node scripts/weekly-trending-languages.mjs",
     "demo:now-playing": "node scripts/now-playing-follow-on-demo.mjs",
-    "demo:weekly-radar": "node scripts/weekly-streaming-radar.mjs"
+    "demo:weekly-radar": "node scripts/weekly-streaming-radar.mjs",
+    "demo:release-calendar": "node scripts/release-calendar-watchlist.mjs"
   },
   "keywords": [],
   "author": "",
