@@ -57,6 +57,7 @@ console.log(`Found ${toolNames.length} tools.`);
 console.log(toolNames.join(", "));
 
 const required = [
+  "build_person_watch_path",
   "build_franchise_watch_order",
   "get_weekend_watchlist",
   "plan_watch_party",

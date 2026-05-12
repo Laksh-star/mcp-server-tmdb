@@ -35,6 +35,7 @@ Expose a feature as an MCP tool when it is something a user or agent would ask f
 - `plan_watch_party`: "Pick a movie for a group."
 - `build_franchise_watch_order`: "What order should I watch this franchise?"
 - `recommend_from_taste_profile`: "Recommend something based on what I like and dislike."
+- `build_person_watch_path`: "Where should I start with this actor or director?"
 - `compare_movies`: "Help me choose between these movies."
 - `find_where_to_watch`: "Where can I watch these titles?"
 
@@ -49,12 +50,15 @@ Put reusable logic in TypeScript modules when it is internal machinery:
 - provider matching
 - title normalization
 - franchise resolution
+- person credit selection
 - formatting and summaries
 
 Current examples:
 
 - `src/concierge.ts`: weekend and watch-party planning logic
 - `src/franchise.ts`: franchise watch-order logic
+- `src/person-path.ts`: actor/director watch-path logic
+- `src/taste.ts`: taste-profile recommendation logic
 
 ### Scripts and demos
 
@@ -63,6 +67,7 @@ Keep something as a script when it is mainly for verification, a demo story, or 
 - `scripts/tool-surface-smoke.mjs`: validates the MCP tool contract
 - `scripts/now-playing-follow-on-demo.mjs`: produces an example workflow artifact
 - `scripts/weekly-trending-languages.mjs`: shareable language-trend demo
+- `scripts/weekly-streaming-radar.mjs`: script-first weekly radar artifact
 
 Scripts can chain existing tools without creating a new public MCP tool.
 
@@ -89,33 +94,34 @@ If a feature fails those checks, keep it as shared code or a script until it pro
 | `plan_watch_party` | Pick for a group with mixed moods and constraints | Group watch decisions |
 | `build_franchise_watch_order` | Decide how to watch a franchise or universe | Multi-movie watch planning |
 | `recommend_from_taste_profile` | Recommend from liked and disliked titles | Personalized discovery |
+| `build_person_watch_path` | Find a starter path for an actor/director | Filmography decisions |
 | `compare_movies` | Choose between known movie IDs | Side-by-side tradeoffs |
 | `find_where_to_watch` | Check availability for one or more titles | Actionable provider lookup |
 
 ## Feature Pipeline
 
+Recently added:
+
+- `build_person_watch_path`
+- `scripts/weekly-streaming-radar.mjs`
+- `familySafe` filtering inside `get_weekend_watchlist` and `plan_watch_party`
+
 Recommended next features, in order:
 
-1. **Actor / Director Watch Path**
-   - Tool: `build_person_watch_path`
-   - Inputs: person name, country, services, max titles
-   - Output: starter pick, best-rated pick, recent pick, hidden gem, and available-now pick
-   - Why: it turns existing person search/details into a decision workflow.
-
-2. **Weekly Streaming Radar**
-   - Tool or script first: start as `scripts/weekly-streaming-radar.mjs`
-   - Output: Markdown brief with trending titles, provider-aware picks, language groups, and skip notes
-   - Why: useful recurring artifact, but it should prove itself as a script before becoming an MCP tool.
-
-3. **Family-Safe Filtered Picks**
-   - Tool: likely an extension to `get_weekend_watchlist` or `plan_watch_party`, not a new tool
-   - Inputs: age range, max rating level, runtime, country, services
-   - Why: valuable, but probably belongs inside existing watchlist/planner workflows to avoid tool bloat.
-
-4. **Release Calendar Watchlist**
+1. **Release Calendar Watchlist**
    - Tool or script: start as a script
    - Output: upcoming releases by country/language/genre with "watch later" notes
-   - Why: useful, but more time-sensitive and less decision-complete than the top two.
+   - Why: useful, time-sensitive, and a good artifact before becoming an MCP tool.
+
+2. **Provider Change Monitor**
+   - Tool or script: script first
+   - Output: "new on your services" deltas for selected countries/providers
+   - Why: valuable recurring workflow, but needs persistence or a prior artifact for comparisons.
+
+3. **Collection Gap Finder**
+   - Tool: maybe MCP if it proves durable
+   - Output: watched/unwatched franchise entries, availability, and shortest completion path
+   - Why: extends franchise logic without adding raw TMDB wrappers.
 
 ## Verification Checklist
 
