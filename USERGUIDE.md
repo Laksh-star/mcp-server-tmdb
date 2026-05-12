@@ -68,6 +68,7 @@ Keep something as a script when it is mainly for verification, a demo story, or 
 - `scripts/now-playing-follow-on-demo.mjs`: produces an example workflow artifact
 - `scripts/weekly-trending-languages.mjs`: shareable language-trend demo
 - `scripts/weekly-streaming-radar.mjs`: script-first weekly radar artifact
+- `scripts/release-calendar-watchlist.mjs`: script-first release calendar artifact
 
 Scripts can chain existing tools without creating a new public MCP tool.
 
@@ -104,24 +105,25 @@ Recently added:
 
 - `build_person_watch_path`
 - `scripts/weekly-streaming-radar.mjs`
+- `scripts/release-calendar-watchlist.mjs`
 - `familySafe` filtering inside `get_weekend_watchlist` and `plan_watch_party`
 
 Recommended next features, in order:
 
-1. **Release Calendar Watchlist**
-   - Tool or script: start as a script
-   - Output: upcoming releases by country/language/genre with "watch later" notes
-   - Why: useful, time-sensitive, and a good artifact before becoming an MCP tool.
-
-2. **Provider Change Monitor**
+1. **Provider Change Monitor**
    - Tool or script: script first
    - Output: "new on your services" deltas for selected countries/providers
    - Why: valuable recurring workflow, but needs persistence or a prior artifact for comparisons.
 
-3. **Collection Gap Finder**
+2. **Collection Gap Finder**
    - Tool: maybe MCP if it proves durable
    - Output: watched/unwatched franchise entries, availability, and shortest completion path
    - Why: extends franchise logic without adding raw TMDB wrappers.
+
+3. **Release Calendar Promotion**
+   - Tool: only if the script proves it is used often
+   - Output: stable MCP result for release-window watch decisions
+   - Why: keep it script-first until the user intent is proven.
 
 ## Verification Checklist
 
