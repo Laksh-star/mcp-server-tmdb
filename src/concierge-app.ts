@@ -854,6 +854,7 @@ export function renderConciergeApp(): string {
       "get_now_playing",
       "get_person_details",
       "plan_watch_party",
+      "recommend_from_taste_profile",
       "get_recommendations",
       "get_similar_movies",
       "get_trending",
@@ -1090,6 +1091,19 @@ export function renderConciergeApp(): string {
             name: "build_franchise_watch_order",
             arguments: { query: "The Matrix", country: "US", maxMovies: "5" },
           }),
+          client.rpc("tools/call", {
+            name: "recommend_from_taste_profile",
+            arguments: {
+              likedTitles: ["The Matrix", "Inception"],
+              dislikedTitles: ["The Notebook"],
+              country: "US",
+              services: ["Netflix", "Prime Video"],
+              language: "any",
+              runtime: "160",
+              minRating: "6.7",
+              maxResults: "5",
+            },
+          }),
         ]);
 
         const sampleData = [
@@ -1098,6 +1112,7 @@ export function renderConciergeApp(): string {
           { name: "get_weekend_watchlist", text: textFromToolResult(samples[2]) },
           { name: "plan_watch_party", text: textFromToolResult(samples[3]) },
           { name: "build_franchise_watch_order", text: textFromToolResult(samples[4]) },
+          { name: "recommend_from_taste_profile", text: textFromToolResult(samples[5]) },
         ];
         renderMcpSmoke(toolNames, sampleData);
         statusEl.textContent = "Done";
