@@ -764,6 +764,8 @@ export function renderConciergeApp(): string {
           <input id="minRating" name="minRating" type="number" min="0" max="9" step="0.1" value="6.5">
         </div>
 
+        <label class="check"><input type="checkbox" name="familySafe" value="true">Family-safe</label>
+
         <div class="field">
           <label for="accessToken">Access token</label>
           <input id="accessToken" name="accessToken" type="text" autocomplete="off" placeholder="Only needed on protected deployments">
@@ -852,6 +854,7 @@ export function renderConciergeApp(): string {
       "find_where_to_watch",
       "get_movie_details",
       "get_now_playing",
+      "build_person_watch_path",
       "get_person_details",
       "plan_watch_party",
       "recommend_from_taste_profile",
@@ -946,6 +949,7 @@ export function renderConciergeApp(): string {
         runtime: data.get("runtime"),
         minRating: data.get("minRating"),
         services: data.getAll("services"),
+        familySafe: data.get("familySafe") ? "true" : "false",
       };
       const payload = selectedMode === "party"
         ? {
@@ -1072,6 +1076,7 @@ export function renderConciergeApp(): string {
               runtime: "150",
               minRating: "6.5",
               services: ["Netflix", "Prime Video"],
+              familySafe: "true",
             },
           }),
           client.rpc("tools/call", {
@@ -1085,6 +1090,7 @@ export function renderConciergeApp(): string {
               minRating: "6.8",
               services: ["Netflix", "Prime Video"],
               avoidTitles: ["The Matrix"],
+              familySafe: "true",
             },
           }),
           client.rpc("tools/call", {
@@ -1104,6 +1110,10 @@ export function renderConciergeApp(): string {
               maxResults: "5",
             },
           }),
+          client.rpc("tools/call", {
+            name: "build_person_watch_path",
+            arguments: { name: "Keanu Reeves", country: "US", services: ["Netflix", "Prime Video"], maxTitles: "5" },
+          }),
         ]);
 
         const sampleData = [
@@ -1113,6 +1123,7 @@ export function renderConciergeApp(): string {
           { name: "plan_watch_party", text: textFromToolResult(samples[3]) },
           { name: "build_franchise_watch_order", text: textFromToolResult(samples[4]) },
           { name: "recommend_from_taste_profile", text: textFromToolResult(samples[5]) },
+          { name: "build_person_watch_path", text: textFromToolResult(samples[6]) },
         ];
         renderMcpSmoke(toolNames, sampleData);
         statusEl.textContent = "Done";

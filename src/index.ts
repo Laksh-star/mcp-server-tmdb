@@ -23,6 +23,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { createWatchPartyPlanner, createWeekendConcierge } from "./concierge.js";
 import { buildFranchiseWatchOrder, franchiseGuideSummary } from "./franchise.js";
+import { buildPersonWatchPath, personWatchPathSummary } from "./person-path.js";
 import { recommendFromTasteProfile, tasteProfileSummary } from "./taste.js";
 
 // Type definitions
@@ -551,6 +552,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               items: { type: "string" },
               description: "Preferred streaming services, for example Netflix or Prime Video.",
             },
+            familySafe: {
+              type: "string",
+              enum: ["true", "false"],
+              description: "When true, exclude common mature genres such as horror, thriller, crime, and war.",
+            },
           },
         },
       },
@@ -597,6 +603,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               type: "array",
               items: { type: "string" },
               description: "Titles the group has already seen or wants to avoid.",
+            },
+            familySafe: {
+              type: "string",
+              enum: ["true", "false"],
+              description: "When true, exclude common mature genres such as horror, thriller, crime, and war.",
             },
           },
         },
@@ -669,6 +680,33 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
           },
           required: ["likedTitles"],
+        },
+      },
+      {
+        name: "build_person_watch_path",
+        description: "Build a watch path for an actor, director, or crew member with best-rated, available-now, recent, and starter picks",
+        inputSchema: {
+          type: "object",
+          properties: {
+            name: {
+              type: "string",
+              description: "Actor, director, writer, or crew member name.",
+            },
+            country: {
+              type: "string",
+              description: "ISO 3166-1 country code for watch-provider availability. Defaults to IN.",
+            },
+            services: {
+              type: "array",
+              items: { type: "string" },
+              description: "Preferred streaming services, for example Netflix or Prime Video.",
+            },
+            maxTitles: {
+              type: "string",
+              description: "Number of watch-path entries to return, from 3 to 8. Defaults to 5.",
+            },
+          },
+          required: ["name"],
         },
       },
       {
@@ -972,6 +1010,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             runtime: request.params.arguments?.runtime as string | undefined,
             minRating: request.params.arguments?.minRating as string | undefined,
             services: request.params.arguments?.services as string[] | undefined,
+            familySafe: request.params.arguments?.familySafe as string | undefined,
           },
         );
 
@@ -996,6 +1035,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             minRating: request.params.arguments?.minRating as string | undefined,
             services: request.params.arguments?.services as string[] | undefined,
             avoidTitles: request.params.arguments?.avoidTitles as string[] | undefined,
+            familySafe: request.params.arguments?.familySafe as string | undefined,
           },
         );
 
@@ -1044,6 +1084,26 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         return {
           content: [{ type: "text", text: tasteProfileSummary(result) }],
+          isError: false,
+        };
+      }
+
+      case "build_person_watch_path": {
+        const result = await buildPersonWatchPath(
+          {
+            TMDB_API_KEY,
+            TMDB_BASE_URL,
+          },
+          {
+            name: request.params.arguments?.name as string | undefined,
+            country: request.params.arguments?.country as string | undefined,
+            services: request.params.arguments?.services as string[] | undefined,
+            maxTitles: request.params.arguments?.maxTitles as string | undefined,
+          },
+        );
+
+        return {
+          content: [{ type: "text", text: personWatchPathSummary(result) }],
           isError: false,
         };
       }

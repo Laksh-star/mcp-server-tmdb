@@ -6,6 +6,7 @@ import { z } from "zod";
 import { renderConciergeApp } from "./concierge-app";
 import { createWatchPartyPlanner, createWeekendConcierge } from "./concierge";
 import { buildFranchiseWatchOrder, franchiseGuideSummary } from "./franchise";
+import { buildPersonWatchPath, personWatchPathSummary } from "./person-path";
 import { recommendFromTasteProfile, tasteProfileSummary } from "./taste";
 
 interface Env {
@@ -556,10 +557,11 @@ function createTMDBServer(env: Env): McpServer {
         runtime: z.string().optional().describe("Maximum runtime in minutes, or any"),
         minRating: z.string().optional().describe("Minimum TMDB rating from 0 to 9, defaults to 6.5"),
         services: z.array(z.string()).optional().describe("Preferred streaming services, for example Netflix or Prime Video"),
+        familySafe: z.string().optional().describe("When true, exclude common mature genres such as horror, thriller, crime, and war"),
       },
       annotations: READ_ONLY_TOOL,
     },
-    async ({ mood, country, language, runtime, minRating, services }) => {
+    async ({ mood, country, language, runtime, minRating, services, familySafe }) => {
       const result = await createWeekendConcierge(env, {
         mood,
         country,
@@ -567,6 +569,7 @@ function createTMDBServer(env: Env): McpServer {
         runtime,
         minRating,
         services,
+        familySafe,
       });
       return textResult(conciergeSummary(result));
     },
@@ -589,10 +592,11 @@ function createTMDBServer(env: Env): McpServer {
         minRating: z.string().optional().describe("Minimum TMDB rating from 0 to 9, defaults to 6.8"),
         services: z.array(z.string()).optional().describe("Preferred streaming services, for example Netflix or Prime Video"),
         avoidTitles: z.array(z.string()).optional().describe("Titles the group has already seen or wants to avoid"),
+        familySafe: z.string().optional().describe("When true, exclude common mature genres such as horror, thriller, crime, and war"),
       },
       annotations: READ_ONLY_TOOL,
     },
-    async ({ moods, groupSize, country, language, runtime, minRating, services, avoidTitles }) => {
+    async ({ moods, groupSize, country, language, runtime, minRating, services, avoidTitles, familySafe }) => {
       const result = await createWatchPartyPlanner(env, {
         moods,
         groupSize,
@@ -602,6 +606,7 @@ function createTMDBServer(env: Env): McpServer {
         minRating,
         services,
         avoidTitles,
+        familySafe,
       });
       return textResult(watchPartyPlanSummary(result));
     },
@@ -656,6 +661,29 @@ function createTMDBServer(env: Env): McpServer {
         maxResults,
       });
       return textResult(tasteProfileSummary(result));
+    },
+  );
+
+  server.registerTool(
+    "build_person_watch_path",
+    {
+      description: "Build a watch path for an actor, director, or crew member with best-rated, available-now, recent, and starter picks",
+      inputSchema: {
+        name: z.string().describe("Actor, director, writer, or crew member name"),
+        country: z.string().optional().describe("ISO 3166-1 country code for watch-provider availability, defaults to IN"),
+        services: z.array(z.string()).optional().describe("Preferred streaming services, for example Netflix or Prime Video"),
+        maxTitles: z.string().optional().describe("Number of watch-path entries to return, from 3 to 8. Defaults to 5"),
+      },
+      annotations: READ_ONLY_TOOL,
+    },
+    async ({ name, country, services, maxTitles }) => {
+      const result = await buildPersonWatchPath(env, {
+        name,
+        country,
+        services,
+        maxTitles,
+      });
+      return textResult(personWatchPathSummary(result));
     },
   );
 

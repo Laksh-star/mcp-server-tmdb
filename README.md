@@ -33,6 +33,7 @@ For the architecture split between the reusable MCP server and higher-level feat
 ### People
 - **search_person** — Find actors, directors, crew by name → ID + known works
 - **get_person_details** — Full bio + filmography (movies + TV) by `personId`
+- **build_person_watch_path** — Actor/director watch path with best-rated, available-now, recent, and starter picks
 
 ### Resources
 - `tmdb:///movie/<id>` — Full movie details in JSON (title, cast, director, reviews, poster URL)
@@ -69,7 +70,7 @@ In Codex, a fresh session should show `TMDB` in the plugin list and expose the `
 
 ## Tool Surface Smoke
 
-Use this smoke test after adding or merging tools. It verifies the expected MCP tool contract and calls the main workflow tools: `compare_movies`, `find_where_to_watch`, `get_weekend_watchlist`, `plan_watch_party`, `build_franchise_watch_order`, and `recommend_from_taste_profile`.
+Use this smoke test after adding or merging tools. It verifies the expected MCP tool contract and calls the main workflow tools: `compare_movies`, `find_where_to_watch`, `get_weekend_watchlist`, `plan_watch_party`, `build_franchise_watch_order`, `recommend_from_taste_profile`, and `build_person_watch_path`.
 
 Local stdio MCP:
 
@@ -111,6 +112,29 @@ TMDB_MCP_ACCESS_TOKEN=<your-access-token> node scripts/weekly-trending-languages
 
 If the deployment is intentionally authless for personal testing, omit `TMDB_MCP_ACCESS_TOKEN`.
 
+## Weekly Streaming Radar
+
+This repo also includes a script-first weekly radar. It chains existing MCP tools into a Markdown artifact with movie trends, TV trends, language momentum, action-ready picks, family-safe picks, and a taste-profile probe.
+
+Local stdio MCP:
+
+```bash
+npm run build
+set -a && source ./.env && set +a && npm run demo:weekly-radar -- --country US
+```
+
+Cloudflare-hosted MCP:
+
+```bash
+TMDB_MCP_ACCESS_TOKEN=<your-access-token> node scripts/weekly-streaming-radar.mjs --mcp-url https://tmdb-mcp.<your-workers-subdomain>.workers.dev/mcp --country US
+```
+
+The script writes:
+
+```text
+examples/weekly-streaming-radar.md
+```
+
 ## Remote MCP on Cloudflare Workers
 
 This repo can also run as a remote MCP server on Cloudflare Workers. The remote server exposes the same TMDB tools at `/mcp` over Streamable HTTP, so Claude, Cowork, Claude Desktop connectors, and other remote-MCP clients can connect to a public URL.
@@ -119,7 +143,7 @@ The existing local stdio server remains unchanged for Codex and local Claude Des
 
 The Worker also serves a browser demo at `/`: **Weekend Watch Concierge**. It supports solo picks and Watch Party mode, then builds a ranked movie shortlist using TMDB discovery, trending, now-playing, credits, posters, and watch-provider data.
 
-The browser demo also includes an **MCP tool surface** panel that calls the deployed `/mcp` route, verifies the expected tool contract, and samples `compare_movies`, `find_where_to_watch`, `get_weekend_watchlist`, `plan_watch_party`, `build_franchise_watch_order`, and `recommend_from_taste_profile`.
+The browser demo also includes an **MCP tool surface** panel that calls the deployed `/mcp` route, verifies the expected tool contract, and samples `compare_movies`, `find_where_to_watch`, `get_weekend_watchlist`, `plan_watch_party`, `build_franchise_watch_order`, `recommend_from_taste_profile`, and `build_person_watch_path`.
 
 ![Weekend Watch Concierge Watch Party mode](docs/assets/weekend-watch-concierge-watch-party.png)
 
@@ -274,6 +298,7 @@ Agents can call `get_weekend_watchlist` with:
 - `runtime`: maximum minutes, for example `120`, `150`, or `any`
 - `minRating`: minimum TMDB rating
 - `services`: preferred streaming services
+- `familySafe`: set to `true` to exclude common mature genres when TMDB genre data is available
 
 Agents can call `plan_watch_party` when the decision is for a group. It accepts:
 
@@ -281,6 +306,7 @@ Agents can call `plan_watch_party` when the decision is for a group. It accepts:
 - `groupSize`: number of people watching
 - `country`, `language`, `runtime`, `minRating`, and `services`: same meaning as the weekend watchlist
 - `avoidTitles`: titles the group has already seen or wants excluded
+- `familySafe`: set to `true` to exclude common mature genres when TMDB genre data is available
 
 Agents can call `build_franchise_watch_order` for a collection or universe guide. It accepts:
 
@@ -294,6 +320,13 @@ Agents can call `recommend_from_taste_profile` for personalized recommendations.
 - `dislikedTitles`: optional movies the user dislikes or wants to avoid stylistically
 - `country`, `services`, `language`, `runtime`, and `minRating`: filters and watch-now preferences
 - `maxResults`: number of recommendations to return, from 3 to 10
+
+Agents can call `build_person_watch_path` for an actor, director, writer, or crew member. It accepts:
+
+- `name`: person name, for example `Keanu Reeves` or `Christopher Nolan`
+- `country`: watch-provider region, for example `IN` or `US`
+- `services`: preferred streaming services
+- `maxTitles`: number of watch-path entries to return, from 3 to 8
 
 ## Cloudflare MCP Demo Workflow
 

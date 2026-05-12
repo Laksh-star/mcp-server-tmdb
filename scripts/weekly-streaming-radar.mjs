@@ -10,37 +10,13 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, "..");
 const serverEntry = path.join(repoRoot, "dist", "index.js");
-const defaultOutputPath = path.join(repoRoot, "examples", "tool-surface-smoke.md");
+const defaultOutputPath = path.join(repoRoot, "examples", "weekly-streaming-radar.md");
 
 const args = process.argv.slice(2);
 const mcpUrl = valueAfter("--mcp-url");
 const outputPath = path.resolve(valueAfter("--out") || defaultOutputPath);
+const country = (valueAfter("--country") || "US").toUpperCase();
 const accessToken = valueAfter("--access-token") || process.env.TMDB_MCP_ACCESS_TOKEN || process.env.ACCESS_TOKEN;
-
-const EXPECTED_TOOLS = [
-  "advanced_search",
-  "build_franchise_watch_order",
-  "compare_movies",
-  "find_where_to_watch",
-  "get_movie_details",
-  "get_now_playing",
-  "build_person_watch_path",
-  "get_person_details",
-  "plan_watch_party",
-  "recommend_from_taste_profile",
-  "get_recommendations",
-  "get_similar_movies",
-  "get_trending",
-  "get_trending_tv",
-  "get_watch_providers",
-  "get_weekend_watchlist",
-  "get_weekly_trending_by_language",
-  "search_by_genre",
-  "search_by_keyword",
-  "search_movies",
-  "search_person",
-  "search_tv_shows",
-];
 
 function valueAfter(flag) {
   const index = args.indexOf(flag);
@@ -50,13 +26,14 @@ function valueAfter(flag) {
 function usage() {
   console.log(`Usage:
   npm run build
-  node scripts/tool-surface-smoke.mjs
-  node scripts/tool-surface-smoke.mjs --mcp-url https://tmdb-mcp.<your-workers-subdomain>.workers.dev/mcp
+  node scripts/weekly-streaming-radar.mjs --country US
+  node scripts/weekly-streaming-radar.mjs --mcp-url https://tmdb-mcp.<your-workers-subdomain>.workers.dev/mcp --country IN
 
 Options:
   --mcp-url <url>       Remote Cloudflare MCP endpoint. Omit for local stdio.
   --access-token <tok>  Bearer token for protected remote endpoints.
-  --out <path>          Markdown artifact path. Defaults to examples/tool-surface-smoke.md.
+  --country <code>      Watch-provider country, defaults to US.
+  --out <path>          Markdown artifact path. Defaults to examples/weekly-streaming-radar.md.
 
 Environment:
   TMDB_API_KEY is required for local stdio mode.
@@ -100,21 +77,17 @@ async function createRemoteClient(endpoint) {
     return payload.result;
   }
 
-  const initializeResult = await rpc("initialize", {
+  await rpc("initialize", {
     protocolVersion: "2025-06-18",
     capabilities: {},
     clientInfo: {
-      name: "tmdb-tool-surface-smoke",
+      name: "tmdb-weekly-streaming-radar",
       version: "1.0.0",
     },
   });
 
   return {
     mode: "remote",
-    serverName: initializeResult.serverInfo?.name || "unknown",
-    listTools() {
-      return rpc("tools/list", {});
-    },
     callTool(name, toolArgs) {
       return rpc("tools/call", { name, arguments: toolArgs });
     },
@@ -138,7 +111,7 @@ async function createLocalClient() {
   });
   const client = new Client(
     {
-      name: "tmdb-tool-surface-smoke",
+      name: "tmdb-weekly-streaming-radar",
       version: "1.0.0",
     },
     { capabilities: {} },
@@ -147,10 +120,6 @@ async function createLocalClient() {
 
   return {
     mode: "local",
-    serverName: "mcp-server-tmdb",
-    listTools() {
-      return client.listTools();
-    },
     callTool(name, toolArgs) {
       return client.callTool({ name, arguments: toolArgs });
     },
@@ -192,18 +161,12 @@ async function callToolText(client, name, toolArgs, attempts = 3) {
   throw lastError;
 }
 
-function assertIncludes(text, needle, label) {
-  if (!text.includes(needle)) {
-    throw new Error(`${label} did not include expected text: ${needle}`);
-  }
-}
-
-function excerpt(text, maxLines = 12) {
-  return text.split("\n").slice(0, maxLines).join("\n");
-}
-
 function fenced(text) {
   return `\`\`\`text\n${text.replaceAll("```", "'''")}\n\`\`\``;
+}
+
+function excerpt(text, maxLines = 18) {
+  return text.split("\n").slice(0, maxLines).join("\n");
 }
 
 async function main() {
@@ -214,134 +177,104 @@ async function main() {
 
   const client = mcpUrl ? await createRemoteClient(mcpUrl) : await createLocalClient();
   try {
-    const toolsResult = await client.listTools();
-    const actualTools = toolsResult.tools.map((tool) => tool.name).sort();
-    const missing = EXPECTED_TOOLS.filter((tool) => !actualTools.includes(tool));
-    const unexpected = actualTools.filter((tool) => !EXPECTED_TOOLS.includes(tool));
-    if (missing.length > 0) {
-      throw new Error(`Missing expected tools: ${missing.join(", ")}`);
-    }
-
-    const compareText = await callToolText(client, "compare_movies", {
-      movieIds: ["603", "155"],
-      country: "US",
-    });
-    assertIncludes(compareText, "Quick decision", "compare_movies");
-
-    const whereText = await callToolText(client, "find_where_to_watch", {
-      titles: ["The Matrix", "The Dark Knight"],
-      country: "US",
-      services: ["HBO", "Netflix"],
-    });
-    assertIncludes(whereText, "Preferred-service matches", "find_where_to_watch");
-
-    const conciergeText = await callToolText(client, "get_weekend_watchlist", {
-      mood: "thriller",
-      country: "US",
-      language: "any",
-      runtime: "150",
-      minRating: "6.5",
-      services: ["Netflix", "Prime Video"],
-      familySafe: "true",
-    });
-    assertIncludes(conciergeText, "Weekend Watch Concierge picks", "get_weekend_watchlist");
-
-    const partyText = await callToolText(client, "plan_watch_party", {
-      moods: ["crowd", "thriller"],
-      groupSize: "5",
-      country: "US",
-      language: "any",
-      runtime: "135",
-      minRating: "6.8",
-      services: ["Netflix", "Prime Video"],
-      avoidTitles: ["The Matrix"],
-      familySafe: "true",
-    });
-    assertIncludes(partyText, "Watch Party Planner", "plan_watch_party");
-
-    const franchiseText = await callToolText(client, "build_franchise_watch_order", {
-      query: "The Matrix",
-      country: "US",
-      maxMovies: "5",
-    });
-    assertIncludes(franchiseText, "Franchise Watch Guide", "build_franchise_watch_order");
-
-    const tasteText = await callToolText(client, "recommend_from_taste_profile", {
-      likedTitles: ["The Matrix", "Inception"],
-      dislikedTitles: ["The Notebook"],
-      country: "US",
-      services: ["Netflix", "Prime Video"],
-      language: "any",
-      runtime: "160",
-      minRating: "6.7",
-      maxResults: "5",
-    });
-    assertIncludes(tasteText, "Taste Profile Recommendations", "recommend_from_taste_profile");
-
-    const personText = await callToolText(client, "build_person_watch_path", {
-      name: "Keanu Reeves",
-      country: "US",
-      services: ["Netflix", "Prime Video"],
-      maxTitles: "5",
-    });
-    assertIncludes(personText, "Person Watch Path", "build_person_watch_path");
+    const [
+      trendingMovies,
+      trendingTv,
+      languageTrends,
+      actionReady,
+      familySafe,
+      tasteProbe,
+    ] = await Promise.all([
+      callToolText(client, "get_trending", { timeWindow: "week" }),
+      callToolText(client, "get_trending_tv", { timeWindow: "week" }),
+      callToolText(client, "get_weekly_trending_by_language", {}),
+      callToolText(client, "get_weekend_watchlist", {
+        mood: "crowd",
+        country,
+        language: "any",
+        runtime: "150",
+        minRating: "6.7",
+        services: ["Netflix", "Prime Video"],
+      }),
+      callToolText(client, "get_weekend_watchlist", {
+        mood: "family",
+        country,
+        language: "any",
+        runtime: "130",
+        minRating: "6.5",
+        services: ["Netflix", "Prime Video"],
+        familySafe: "true",
+      }),
+      callToolText(client, "recommend_from_taste_profile", {
+        likedTitles: ["The Matrix", "Inception"],
+        dislikedTitles: ["The Notebook"],
+        country,
+        services: ["Netflix", "Prime Video"],
+        language: "any",
+        runtime: "160",
+        minRating: "6.7",
+        maxResults: "5",
+      }),
+    ]);
 
     const generatedAt = new Date().toISOString();
     const artifact = [
-      "# TMDB MCP Tool Surface Smoke",
+      "# Weekly Streaming Radar",
       "",
       `Generated: ${generatedAt}`,
       `Mode: ${client.mode}`,
-      `Server: ${client.serverName}`,
+      `Country: ${country}`,
       `Endpoint: ${mcpUrl || "local stdio dist/index.js"}`,
       "",
-      "## Tool Contract",
+      "## What To Scan First",
       "",
-      `Expected tools: ${EXPECTED_TOOLS.length}`,
-      `Actual tools: ${actualTools.length}`,
-      unexpected.length > 0 ? `Unexpected tools: ${unexpected.join(", ")}` : "Unexpected tools: none",
+      "1. Use the action-ready watchlist for immediate viewing decisions.",
+      "2. Use the family-safe section when the room includes younger viewers.",
+      "3. Use taste-profile results when the viewer has clear likes and dislikes.",
       "",
-      "```text",
-      actualTools.join("\n"),
+      "## Weekly Movie Trends",
+      "",
+      fenced(excerpt(trendingMovies, 16)),
+      "",
+      "## Weekly TV Trends",
+      "",
+      fenced(excerpt(trendingTv, 16)),
+      "",
+      "## Language Momentum",
+      "",
+      fenced(excerpt(languageTrends, 24)),
+      "",
+      "## Action-Ready Movie Picks",
+      "",
+      fenced(excerpt(actionReady, 24)),
+      "",
+      "## Family-Safe Picks",
+      "",
+      fenced(excerpt(familySafe, 24)),
+      "",
+      "## Taste Profile Probe",
+      "",
+      fenced(excerpt(tasteProbe, 24)),
+      "",
+      "## Re-run Commands",
+      "",
+      "Local stdio MCP:",
+      "",
+      "```bash",
+      "npm run build",
+      `set -a && source ./.env && set +a && node scripts/weekly-streaming-radar.mjs --country ${country}`,
       "```",
       "",
-      "## Workflow Smoke Results",
+      "Cloudflare-hosted MCP:",
       "",
-      "### compare_movies",
-      "",
-      fenced(excerpt(compareText, 18)),
-      "",
-      "### find_where_to_watch",
-      "",
-      fenced(excerpt(whereText, 18)),
-      "",
-      "### get_weekend_watchlist",
-      "",
-      fenced(excerpt(conciergeText, 18)),
-      "",
-      "### plan_watch_party",
-      "",
-      fenced(excerpt(partyText, 18)),
-      "",
-      "### build_franchise_watch_order",
-      "",
-      fenced(excerpt(franchiseText, 18)),
-      "",
-      "### recommend_from_taste_profile",
-      "",
-      fenced(excerpt(tasteText, 18)),
-      "",
-      "### build_person_watch_path",
-      "",
-      fenced(excerpt(personText, 18)),
+      "```bash",
+      `TMDB_MCP_ACCESS_TOKEN=<your-access-token> node scripts/weekly-streaming-radar.mjs --mcp-url https://tmdb-mcp.<your-workers-subdomain>.workers.dev/mcp --country ${country}`,
+      "```",
       "",
     ].join("\n");
 
     await mkdir(path.dirname(outputPath), { recursive: true });
     await writeFile(outputPath, artifact);
-
-    console.log(`Tool contract OK: ${actualTools.length} tools.`);
-    console.log("Workflow calls OK: compare_movies, find_where_to_watch, get_weekend_watchlist, plan_watch_party, build_franchise_watch_order, recommend_from_taste_profile, build_person_watch_path.");
     console.log(`Wrote ${outputPath}`);
   } finally {
     await client.close();

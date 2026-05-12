@@ -55,6 +55,7 @@ try {
   console.log(toolNames.join(", "));
 
   const requiredTools = [
+    "build_person_watch_path",
     "build_franchise_watch_order",
     "search_movies",
     "recommend_from_taste_profile",

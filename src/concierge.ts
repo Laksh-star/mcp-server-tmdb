@@ -10,6 +10,7 @@ interface ConciergeInput {
   runtime?: string;
   minRating?: string;
   services?: string[];
+  familySafe?: string | boolean;
 }
 
 interface WatchPartyPlannerInput {
@@ -21,6 +22,7 @@ interface WatchPartyPlannerInput {
   minRating?: string;
   services?: string[];
   avoidTitles?: string[];
+  familySafe?: string | boolean;
 }
 
 interface MovieSummary {
@@ -174,6 +176,8 @@ const LANGUAGE_LABELS: Record<string, string> = {
 };
 
 const COUNTRY_DEFAULT = "IN";
+const FAMILY_UNFRIENDLY_GENRES = new Set([27, 53, 80, 10752]);
+const FAMILY_UNFRIENDLY_GENRE_PARAM = Array.from(FAMILY_UNFRIENDLY_GENRES).join("|");
 
 function normalizeCountry(country?: string): string {
   return (country || COUNTRY_DEFAULT).trim().slice(0, 2).toUpperCase() || COUNTRY_DEFAULT;
@@ -230,6 +234,16 @@ function parseMinRating(minRating?: string): number {
   const parsed = Number(minRating || "6.5");
   if (!Number.isFinite(parsed)) return 6.5;
   return Math.min(9, Math.max(0, parsed));
+}
+
+function parseBoolean(value?: string | boolean): boolean {
+  if (typeof value === "boolean") return value;
+  return ["1", "true", "yes", "on"].includes(String(value || "").trim().toLowerCase());
+}
+
+function isFamilySafeMovie(movie: MovieDetails): boolean {
+  const ids = movie.genres?.map((genre) => genre.id) || movie.genre_ids || [];
+  return ids.every((id) => !FAMILY_UNFRIENDLY_GENRES.has(id));
 }
 
 async function fetchFromTMDB<T>(
@@ -318,6 +332,7 @@ function scorePick(
   countryProviders: WatchProviderResult | undefined,
   profile: MoodProfile,
   requestedServices: string[],
+  familySafe: boolean,
 ): { score: number; reasons: string[] } {
   const streaming = providerNames(countryProviders?.flatrate);
   const rent = providerNames(countryProviders?.rent);
@@ -336,6 +351,7 @@ function scorePick(
   score += streaming.length > 0 ? 8 : 0;
   score += serviceMatches * 18;
   score += recentBoost;
+  if (familySafe && isFamilySafeMovie(movie)) score += 12;
 
   const reasons: string[] = [];
   if (genreMatches > 0) reasons.push(`Fits ${profile.label.toLowerCase()} mode`);
@@ -343,6 +359,7 @@ function scorePick(
   if (movie.vote_average >= 7.5) reasons.push(`Strong TMDB rating at ${movie.vote_average.toFixed(1)}/10`);
   if (streaming.length > 0) reasons.push(`Streaming in your selected country`);
   if (movie.runtime && movie.runtime <= 120) reasons.push(`Weekend-friendly ${movie.runtime} minute runtime`);
+  if (familySafe && isFamilySafeMovie(movie)) reasons.push("Avoids common mature genres");
   if (reasons.length === 0) reasons.push("Balanced pick from TMDB popularity and ratings");
 
   return { score: Math.round(score), reasons: reasons.slice(0, 3) };
@@ -353,9 +370,10 @@ function pickFromDetails(
   country: string,
   profile: MoodProfile,
   requestedServices: string[],
+  familySafe: boolean,
 ): ConciergePick {
   const countryProviders = movie["watch/providers"]?.results?.[country];
-  const scored = scorePick(movie, countryProviders, profile, requestedServices);
+  const scored = scorePick(movie, countryProviders, profile, requestedServices, familySafe);
   const director = movie.credits?.crew?.find((person) => person.job === "Director")?.name;
 
   return {
@@ -441,6 +459,7 @@ export async function createWeekendConcierge(
   const maxRuntime = parseRuntime(rawInput.runtime);
   const minRating = parseMinRating(rawInput.minRating);
   const requestedServices = (rawInput.services || []).map((service) => service.trim()).filter(Boolean);
+  const familySafe = parseBoolean(rawInput.familySafe);
 
   const keywordIds = await keywordIdsFor(env, profile.keywords);
   const discoverParams: Record<string, string> = {
@@ -454,6 +473,7 @@ export async function createWeekendConcierge(
 
   if (language !== "any") discoverParams.with_original_language = language;
   if (maxRuntime) discoverParams["with_runtime.lte"] = String(maxRuntime);
+  if (familySafe) discoverParams.without_genres = FAMILY_UNFRIENDLY_GENRE_PARAM;
 
   const keywordParams = { ...discoverParams };
   if (keywordIds.length > 0) keywordParams.with_keywords = keywordIds.join("|");
@@ -486,7 +506,8 @@ export async function createWeekendConcierge(
     .map((result) => result.value);
 
   const picks = detailed
-    .map((movie) => pickFromDetails(movie, country, profile, requestedServices))
+    .filter((movie) => !familySafe || isFamilySafeMovie(movie))
+    .map((movie) => pickFromDetails(movie, country, profile, requestedServices, familySafe))
     .filter((pick) => !maxRuntime || !pick.runtime || pick.runtime <= maxRuntime)
     .sort((a, b) => b.score - a.score)
     .slice(0, 8);
@@ -505,6 +526,9 @@ export async function createWeekendConcierge(
   }
   if (detailed.length < candidates.length) {
     notes.push("Some candidate details were skipped because TMDB detail requests failed.");
+  }
+  if (familySafe) {
+    notes.push("Family-safe mode excludes common mature genres such as horror, thriller, crime, and war when TMDB genre data is available.");
   }
 
   return {
@@ -529,6 +553,7 @@ export async function createWatchPartyPlanner(
   const minRating = rawInput.minRating || "6.8";
   const requestedServices = (rawInput.services || []).map((service) => service.trim()).filter(Boolean);
   const avoided = new Set((rawInput.avoidTitles || []).map(titleKey).filter(Boolean));
+  const familySafe = parseBoolean(rawInput.familySafe);
 
   const conciergeResults = await Promise.all(
     moods.map((mood) =>
@@ -539,6 +564,7 @@ export async function createWatchPartyPlanner(
         runtime,
         minRating,
         services: requestedServices,
+        familySafe,
       }),
     ),
   );
