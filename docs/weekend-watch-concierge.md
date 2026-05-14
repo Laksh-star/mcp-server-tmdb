@@ -4,8 +4,8 @@ Weekend Watch Concierge is a Cloudflare Worker app and remote MCP tool built on 
 
 It has two user surfaces:
 
-- Browser app: solo picks or Watch Party plans from mood, country, language, runtime, rating, streaming-service, group-size, family-safe, and avoided-title filters. It also shows script-first workflow commands for local Markdown artifacts.
-- Remote MCP tools: `get_weekend_watchlist`, `plan_watch_party`, `build_franchise_watch_order`, `recommend_from_taste_profile`, and `build_person_watch_path`, so agents can ask for the same shortlist, group plan, franchise guide, taste-based recommendations, or person watch path through `/mcp`.
+- Browser app: solo picks, Watch Party plans, and Planning Lab collection-gap plans from mood, country, language, runtime, rating, streaming-service, group-size, family-safe, watched-title, and avoided-title filters. It also shows script-first workflow commands for local Markdown artifacts.
+- Remote MCP tools: `get_weekend_watchlist`, `plan_watch_party`, `build_franchise_watch_order`, `build_collection_gap_plan`, `recommend_from_taste_profile`, and `build_person_watch_path`, so agents can ask for the same shortlist, group plan, franchise guide, collection gap plan, taste-based recommendations, or person watch path through `/mcp`.
 
 ## Screenshots
 
@@ -120,6 +120,14 @@ The **Workflow demos** panel lists local commands for Markdown artifact workflow
 - `npm run demo:collection-gaps`
 
 Those commands run outside the browser and intentionally stay script-first to avoid expanding the public MCP tool surface.
+
+The **Planning Lab** panel calls:
+
+```text
+POST /api/collection-gap-plan
+```
+
+and renders watched entries, missing entries, completion percentage, remaining runtime, provider availability, and a recommended completion path. The endpoint uses the same shared logic as the `build_collection_gap_plan` MCP tool.
 
 ## MCP Tool
 

@@ -34,6 +34,7 @@ Expose a feature as an MCP tool when it is something a user or agent would ask f
 - `get_weekend_watchlist`: "Find me something to watch this weekend."
 - `plan_watch_party`: "Pick a movie for a group."
 - `build_franchise_watch_order`: "What order should I watch this franchise?"
+- `build_collection_gap_plan`: "What am I missing in this franchise?"
 - `recommend_from_taste_profile`: "Recommend something based on what I like and dislike."
 - `build_person_watch_path`: "Where should I start with this actor or director?"
 - `compare_movies`: "Help me choose between these movies."
@@ -57,6 +58,7 @@ Current examples:
 
 - `src/concierge.ts`: weekend and watch-party planning logic
 - `src/franchise.ts`: franchise watch-order logic
+- `src/collection-gap.ts`: franchise completion and gap planning logic
 - `src/person-path.ts`: actor/director watch-path logic
 - `src/taste.ts`: taste-profile recommendation logic
 
@@ -70,7 +72,7 @@ Keep something as a script when it is mainly for verification, a demo story, or 
 - `scripts/weekly-streaming-radar.mjs`: script-first weekly radar artifact
 - `scripts/release-calendar-watchlist.mjs`: script-first release calendar artifact
 - `scripts/provider-change-monitor.mjs`: script-first provider delta monitor with a JSON snapshot
-- `scripts/collection-gap-finder.mjs`: script-first franchise completion and gap artifact
+- `scripts/collection-gap-finder.mjs`: Markdown artifact wrapper around `build_collection_gap_plan`
 
 Scripts can chain existing tools without creating a new public MCP tool.
 
@@ -96,6 +98,7 @@ If a feature fails those checks, keep it as shared code or a script until it pro
 | `get_weekend_watchlist` | Find a ranked shortlist for tonight or the weekend | Solo or simple household viewing |
 | `plan_watch_party` | Pick for a group with mixed moods and constraints | Group watch decisions |
 | `build_franchise_watch_order` | Decide how to watch a franchise or universe | Multi-movie watch planning |
+| `build_collection_gap_plan` | Find missing entries in a watched franchise | Franchise completion planning |
 | `recommend_from_taste_profile` | Recommend from liked and disliked titles | Personalized discovery |
 | `build_person_watch_path` | Find a starter path for an actor/director | Filmography decisions |
 | `compare_movies` | Choose between known movie IDs | Side-by-side tradeoffs |
@@ -109,7 +112,7 @@ Recently added:
 - `scripts/weekly-streaming-radar.mjs`
 - `scripts/release-calendar-watchlist.mjs`
 - `scripts/provider-change-monitor.mjs`
-- `scripts/collection-gap-finder.mjs`
+- `build_collection_gap_plan`
 - `familySafe` filtering inside `get_weekend_watchlist` and `plan_watch_party`
 
 Recommended next features, in order:
@@ -119,10 +122,10 @@ Recommended next features, in order:
    - Output: stable MCP result for provider additions/removals, likely backed by caller-supplied snapshots
    - Why: persistence belongs outside MCP until the storage boundary is explicit.
 
-2. **Collection Gap Promotion**
-   - Tool: maybe MCP if people ask for it directly
-   - Output: watched/unwatched franchise entries, availability, and shortest completion path
-   - Why: current script proves the workflow without adding another public tool yet.
+2. **Planning Lab Expansion**
+   - Tool or UI: application UI first
+   - Output: interactive tabs for taste profile, person path, and release calendar workflows
+   - Why: expose the strongest MCP workflows without adding unnecessary tool surface.
 
 3. **Release Calendar Promotion**
    - Tool: only if the script proves it is used often

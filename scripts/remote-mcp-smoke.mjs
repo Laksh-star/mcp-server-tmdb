@@ -59,6 +59,7 @@ console.log(toolNames.join(", "));
 const required = [
   "build_person_watch_path",
   "build_franchise_watch_order",
+  "build_collection_gap_plan",
   "get_weekend_watchlist",
   "plan_watch_party",
   "recommend_from_taste_profile",

@@ -4,6 +4,7 @@ import { createMcpHandler } from "agents/mcp";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { renderConciergeApp } from "./concierge-app";
+import { buildCollectionGapPlan, collectionGapPlanSummary } from "./collection-gap";
 import { createWatchPartyPlanner, createWeekendConcierge } from "./concierge";
 import { buildFranchiseWatchOrder, franchiseGuideSummary } from "./franchise";
 import { buildPersonWatchPath, personWatchPathSummary } from "./person-path";
@@ -634,6 +635,31 @@ function createTMDBServer(env: Env): McpServer {
   );
 
   server.registerTool(
+    "build_collection_gap_plan",
+    {
+      description: "Build a franchise completion plan by comparing watched titles or TMDB IDs against a collection, with missing entries, remaining runtime, provider availability, and a recommended completion path",
+      inputSchema: {
+        query: z.string().describe("Franchise or collection query, for example The Matrix, Dune, Batman, or Mission Impossible"),
+        watchedTitles: z.array(z.string()).optional().describe("Titles or TMDB movie IDs already watched"),
+        country: z.string().optional().describe("ISO 3166-1 country code for watch-provider availability, defaults to IN"),
+        services: z.array(z.string()).optional().describe("Preferred streaming services, for example Netflix or Prime Video"),
+        maxMovies: z.string().optional().describe("Maximum number of collection entries to include, from 2 to 20. Defaults to 12"),
+      },
+      annotations: READ_ONLY_TOOL,
+    },
+    async ({ query, watchedTitles, country, services, maxMovies }) => {
+      const result = await buildCollectionGapPlan(env, {
+        query,
+        watchedTitles,
+        country,
+        services,
+        maxMovies,
+      });
+      return textResult(collectionGapPlanSummary(result));
+    },
+  );
+
+  server.registerTool(
     "recommend_from_taste_profile",
     {
       description: "Recommend movies from liked and disliked titles with provider-aware scoring, match reasons, and watch-out notes",
@@ -1183,7 +1209,7 @@ export default {
       }, { headers: securityHeaders() });
     }
 
-    if (request.method === "OPTIONS" && (url.pathname === "/api/concierge" || url.pathname === "/api/watch-party" || url.pathname === "/api/weekly-trending-languages")) {
+    if (request.method === "OPTIONS" && (url.pathname === "/api/concierge" || url.pathname === "/api/watch-party" || url.pathname === "/api/weekly-trending-languages" || url.pathname === "/api/collection-gap-plan")) {
       return new Response(null, {
         status: 204,
         headers: {
@@ -1266,6 +1292,34 @@ export default {
       } catch (error) {
         return Response.json(
           { error: error instanceof Error ? error.message : "Unable to generate watch party plan." },
+          {
+            status: 500,
+            headers: {
+              ...securityHeaders(),
+              "access-control-allow-origin": "*",
+            },
+          },
+        );
+      }
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/collection-gap-plan") {
+      if (!authorized(request, env)) {
+        return unauthorizedResponse();
+      }
+
+      try {
+        const input = await request.json().catch(() => ({}));
+        const result = await buildCollectionGapPlan(env, input as Record<string, unknown>);
+        return Response.json(result, {
+          headers: {
+            ...securityHeaders(),
+            "access-control-allow-origin": "*",
+          },
+        });
+      } catch (error) {
+        return Response.json(
+          { error: error instanceof Error ? error.message : "Unable to build collection gap plan." },
           {
             status: 500,
             headers: {

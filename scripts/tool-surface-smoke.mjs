@@ -19,6 +19,7 @@ const accessToken = valueAfter("--access-token") || process.env.TMDB_MCP_ACCESS_
 
 const EXPECTED_TOOLS = [
   "advanced_search",
+  "build_collection_gap_plan",
   "build_franchise_watch_order",
   "compare_movies",
   "find_where_to_watch",
@@ -266,6 +267,15 @@ async function main() {
     });
     assertIncludes(franchiseText, "Franchise Watch Guide", "build_franchise_watch_order");
 
+    const collectionGapText = await callToolText(client, "build_collection_gap_plan", {
+      query: "The Matrix",
+      watchedTitles: ["The Matrix"],
+      country: "US",
+      services: ["Netflix", "Prime Video"],
+      maxMovies: "5",
+    });
+    assertIncludes(collectionGapText, "Collection Gap Plan", "build_collection_gap_plan");
+
     const tasteText = await callToolText(client, "recommend_from_taste_profile", {
       likedTitles: ["The Matrix", "Inception"],
       dislikedTitles: ["The Notebook"],
@@ -327,6 +337,10 @@ async function main() {
       "",
       fenced(excerpt(franchiseText, 18)),
       "",
+      "### build_collection_gap_plan",
+      "",
+      fenced(excerpt(collectionGapText, 18)),
+      "",
       "### recommend_from_taste_profile",
       "",
       fenced(excerpt(tasteText, 18)),
@@ -341,7 +355,7 @@ async function main() {
     await writeFile(outputPath, artifact);
 
     console.log(`Tool contract OK: ${actualTools.length} tools.`);
-    console.log("Workflow calls OK: compare_movies, find_where_to_watch, get_weekend_watchlist, plan_watch_party, build_franchise_watch_order, recommend_from_taste_profile, build_person_watch_path.");
+    console.log("Workflow calls OK: compare_movies, find_where_to_watch, get_weekend_watchlist, plan_watch_party, build_franchise_watch_order, build_collection_gap_plan, recommend_from_taste_profile, build_person_watch_path.");
     console.log(`Wrote ${outputPath}`);
   } finally {
     await client.close();

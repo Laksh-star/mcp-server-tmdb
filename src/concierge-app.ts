@@ -417,23 +417,124 @@ export function renderConciergeApp(): string {
       border-bottom: 1px solid var(--line);
     }
 
-    .workflow-head {
+    .planning-panel {
+      display: grid;
+      gap: 14px;
+      margin-bottom: 24px;
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .workflow-head,
+    .planning-head {
       display: grid;
       gap: 4px;
     }
 
-    .workflow-head h3 {
+    .workflow-head h3,
+    .planning-head h3 {
       margin: 0;
       font-size: 18px;
       line-height: 1.2;
       letter-spacing: 0;
     }
 
-    .workflow-head p {
+    .workflow-head p,
+    .planning-head p {
       margin: 0;
       color: var(--muted);
       font-size: 13px;
       line-height: 1.4;
+    }
+
+    .planning-form {
+      display: grid;
+      grid-template-columns: minmax(180px, 1.2fr) minmax(180px, 1.4fr) repeat(2, minmax(120px, 0.7fr)) auto;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .planning-button {
+      min-width: 112px;
+      height: 42px;
+      border: 0;
+      border-radius: 8px;
+      color: #ffffff;
+      background: var(--accent);
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    .planning-button:disabled {
+      cursor: wait;
+      background: #7c9992;
+    }
+
+    .gap-output {
+      display: grid;
+      gap: 12px;
+    }
+
+    .gap-kpis {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .gap-kpi,
+    .gap-section {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fffdf8;
+      padding: 12px;
+    }
+
+    .gap-kpi span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.3;
+    }
+
+    .gap-kpi strong {
+      display: block;
+      margin-top: 5px;
+      color: #06493f;
+      font-size: 22px;
+      line-height: 1.1;
+    }
+
+    .gap-columns {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .gap-section h4 {
+      margin: 0 0 10px;
+      font-size: 13px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .gap-list {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .gap-item {
+      display: grid;
+      gap: 6px;
+      color: #343434;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .gap-item strong {
+      color: var(--ink);
     }
 
     .workflow-grid {
@@ -731,6 +832,9 @@ export function renderConciergeApp(): string {
 
       .mcp-kpis,
       .mcp-samples,
+      .gap-kpis,
+      .gap-columns,
+      .planning-form,
       .workflow-grid {
         grid-template-columns: 1fr;
       }
@@ -903,6 +1007,40 @@ export function renderConciergeApp(): string {
         <div id="mcp-output" class="empty">Run the smoke check to confirm the deployed MCP endpoint exposes the expected workflow tools.</div>
       </section>
 
+      <section class="planning-panel" aria-labelledby="planning-heading">
+        <div class="planning-head">
+          <h3 id="planning-heading">Planning Lab</h3>
+          <p>Build a franchise completion plan from watched titles, provider availability, and remaining runtime.</p>
+        </div>
+        <form id="collection-gap-form" class="planning-form">
+          <div class="field">
+            <label for="gapQuery">Franchise/title</label>
+            <input id="gapQuery" name="query" type="text" autocomplete="off" value="The Matrix">
+          </div>
+          <div class="field">
+            <label for="watchedTitles">Watched titles or IDs</label>
+            <input id="watchedTitles" name="watchedTitles" type="text" autocomplete="off" placeholder="The Matrix, 604">
+          </div>
+          <div class="field">
+            <label for="gapCountry">Country</label>
+            <select id="gapCountry" name="country">
+              <option value="IN">India</option>
+              <option value="US" selected>United States</option>
+              <option value="GB">United Kingdom</option>
+              <option value="CA">Canada</option>
+              <option value="AU">Australia</option>
+              <option value="SG">Singapore</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="maxMovies">Max entries</label>
+            <input id="maxMovies" name="maxMovies" type="number" min="2" max="20" step="1" value="12">
+          </div>
+          <button class="planning-button" id="run-gap-plan" type="submit">Build plan</button>
+        </form>
+        <div id="gap-output" class="empty">Enter a franchise and watched titles to generate a collection gap plan.</div>
+      </section>
+
       <section class="workflow-panel" aria-labelledby="workflow-heading">
         <div class="workflow-head">
           <h3 id="workflow-heading">Workflow demos</h3>
@@ -951,11 +1089,15 @@ export function renderConciergeApp(): string {
     const runMcpSmoke = document.querySelector("#run-mcp-smoke");
     const mcpOutput = document.querySelector("#mcp-output");
     const mcpSummary = document.querySelector("#mcp-summary");
+    const collectionGapForm = document.querySelector("#collection-gap-form");
+    const runGapPlan = document.querySelector("#run-gap-plan");
+    const gapOutput = document.querySelector("#gap-output");
     let selectedMode = "solo";
     let selectedMood = "crowd";
     let selectedMoods = new Set(["crowd"]);
     const expectedTools = [
       "advanced_search",
+      "build_collection_gap_plan",
       "build_franchise_watch_order",
       "compare_movies",
       "find_where_to_watch",
@@ -1046,6 +1188,7 @@ export function renderConciergeApp(): string {
 
     loadTrends.addEventListener("click", loadWeeklyTrends);
     runMcpSmoke.addEventListener("click", runMcpToolSmoke);
+    collectionGapForm.addEventListener("submit", buildCollectionGapPlan);
 
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -1205,6 +1348,10 @@ export function renderConciergeApp(): string {
             arguments: { query: "The Matrix", country: "US", maxMovies: "5" },
           }),
           client.rpc("tools/call", {
+            name: "build_collection_gap_plan",
+            arguments: { query: "The Matrix", watchedTitles: ["The Matrix"], country: "US", services: ["Netflix", "Prime Video"], maxMovies: "5" },
+          }),
+          client.rpc("tools/call", {
             name: "recommend_from_taste_profile",
             arguments: {
               likedTitles: ["The Matrix", "Inception"],
@@ -1229,8 +1376,9 @@ export function renderConciergeApp(): string {
           { name: "get_weekend_watchlist", text: textFromToolResult(samples[2]) },
           { name: "plan_watch_party", text: textFromToolResult(samples[3]) },
           { name: "build_franchise_watch_order", text: textFromToolResult(samples[4]) },
-          { name: "recommend_from_taste_profile", text: textFromToolResult(samples[5]) },
-          { name: "build_person_watch_path", text: textFromToolResult(samples[6]) },
+          { name: "build_collection_gap_plan", text: textFromToolResult(samples[5]) },
+          { name: "recommend_from_taste_profile", text: textFromToolResult(samples[6]) },
+          { name: "build_person_watch_path", text: textFromToolResult(samples[7]) },
         ];
         renderMcpSmoke(toolNames, sampleData);
         statusEl.textContent = "Done";
@@ -1241,6 +1389,54 @@ export function renderConciergeApp(): string {
       } finally {
         runMcpSmoke.disabled = false;
         runMcpSmoke.textContent = "Run smoke";
+      }
+    }
+
+    async function buildCollectionGapPlan(event) {
+      event.preventDefault();
+      const data = new FormData(collectionGapForm);
+      const token = String(accessToken.value || "").trim();
+      if (token) {
+        sessionStorage.setItem("tmdbConciergeAccessToken", token);
+      }
+
+      const selectedServices = Array.from(form.querySelectorAll('input[name="services"]:checked')).map((item) => item.value);
+      const payload = {
+        query: String(data.get("query") || "").trim(),
+        watchedTitles: String(data.get("watchedTitles") || "")
+          .split(",")
+          .map((title) => title.trim())
+          .filter(Boolean),
+        country: data.get("country"),
+        services: selectedServices,
+        maxMovies: String(data.get("maxMovies") || "12"),
+      };
+
+      runGapPlan.disabled = true;
+      runGapPlan.textContent = "Building";
+      gapOutput.className = "empty";
+      gapOutput.textContent = "Checking collection, watched entries, and provider availability...";
+
+      try {
+        const response = await fetch("/api/collection-gap-plan", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            ...(token ? { authorization: "Bearer " + token } : {}),
+          },
+          body: JSON.stringify(payload),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Request failed");
+        renderCollectionGapPlan(result);
+        statusEl.textContent = "Done";
+      } catch (error) {
+        gapOutput.className = "error";
+        gapOutput.textContent = error instanceof Error ? error.message : "Unable to build collection gap plan.";
+        statusEl.textContent = "Error";
+      } finally {
+        runGapPlan.disabled = false;
+        runGapPlan.textContent = "Build plan";
       }
     }
 
@@ -1397,6 +1593,60 @@ export function renderConciergeApp(): string {
       mcpOutput.innerHTML =
         "<div class=\\"mcp-kpis\\">" + kpis + "</div>" +
         "<div class=\\"mcp-samples\\">" + sampleHtml + "</div>";
+    }
+
+    function renderCollectionGapPlan(result) {
+      gapOutput.className = "gap-output";
+      const kpis = [
+        { label: "Completion", value: result.completionPercent + "%" },
+        { label: "Watched", value: (result.watched || []).length },
+        { label: "Missing", value: (result.missing || []).length },
+        { label: "Remaining", value: formatMinutes(result.remainingRuntimeMinutes) },
+      ].map((item) =>
+        "<div class=\\"gap-kpi\\"><span>" + escapeHtml(item.label) + "</span><strong>" + escapeHtml(item.value) + "</strong></div>"
+      ).join("");
+      gapOutput.innerHTML =
+        "<div class=\\"gap-kpis\\">" + kpis + "</div>" +
+        "<div class=\\"gap-columns\\">" +
+          renderGapSection("Completion path", result.completionPath || []) +
+          renderGapSection("Missing", result.missing || []) +
+          renderGapSection("Watched", result.watched || []) +
+        "</div>";
+    }
+
+    function renderGapSection(title, movies) {
+      const body = movies.length
+        ? "<ol class=\\"gap-list\\">" + movies.slice(0, 8).map((movie) =>
+            "<li class=\\"gap-item\\">" +
+              "<strong>" + escapeHtml(movie.title) + " (" + escapeHtml(movie.year) + ")</strong>" +
+              "<span>" + Number(movie.rating || 0).toFixed(1) + "/10 · " + (movie.runtime ? escapeHtml(movie.runtime + " min") : "runtime unknown") + "</span>" +
+              renderGapProviders(movie) +
+            "</li>"
+          ).join("") + "</ol>"
+        : "<div class=\\"trend-empty\\">No entries.</div>";
+      return "<article class=\\"gap-section\\"><h4>" + escapeHtml(title) + "</h4>" + body + "</article>";
+    }
+
+    function renderGapProviders(movie) {
+      const providers = Array.from(new Set([
+        ...(movie.providers?.streaming || []),
+        ...(movie.providers?.rent || []).slice(0, 2),
+        ...(movie.providers?.buy || []).slice(0, 1),
+      ])).slice(0, 4);
+      const matches = movie.providerMatch || [];
+      const chips = [
+        ...providers.map((provider) => chip(provider, matches.includes(provider) ? "reason" : "provider")),
+        movie.availableNow ? chip("streaming now", "provider") : null,
+      ].filter(Boolean).join("");
+      return chips ? "<div class=\\"providers\\">" + chips + "</div>" : "<span>Availability: no providers found</span>";
+    }
+
+    function formatMinutes(minutes) {
+      const value = Number(minutes || 0);
+      if (!value) return "unknown";
+      const hours = Math.floor(value / 60);
+      const rest = value % 60;
+      return hours > 0 ? hours + "h " + rest + "m" : rest + "m";
     }
 
     function escapeHtml(value) {
