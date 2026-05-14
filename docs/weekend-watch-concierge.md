@@ -4,7 +4,7 @@ Weekend Watch Concierge is a Cloudflare Worker app and remote MCP tool built on 
 
 It has two user surfaces:
 
-- Browser app: solo picks or Watch Party plans from mood, country, language, runtime, rating, streaming-service, group-size, family-safe, and avoided-title filters.
+- Browser app: solo picks or Watch Party plans from mood, country, language, runtime, rating, streaming-service, group-size, family-safe, and avoided-title filters. It also shows script-first workflow commands for local Markdown artifacts.
 - Remote MCP tools: `get_weekend_watchlist`, `plan_watch_party`, `build_franchise_watch_order`, `recommend_from_taste_profile`, and `build_person_watch_path`, so agents can ask for the same shortlist, group plan, franchise guide, taste-based recommendations, or person watch path through `/mcp`.
 
 ## Screenshots
@@ -112,6 +112,14 @@ POST /api/concierge
 ```
 
 and receives ranked picks with title, poster, year, rating, runtime, genres, cast, director, provider data, and ranking reasons.
+
+The **Workflow demos** panel lists local commands for Markdown artifact workflows:
+
+- `npm run demo:weekly-radar`
+- `npm run demo:provider-monitor`
+- `npm run demo:collection-gaps`
+
+Those commands run outside the browser and intentionally stay script-first to avoid expanding the public MCP tool surface.
 
 ## MCP Tool
 
