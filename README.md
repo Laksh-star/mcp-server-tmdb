@@ -212,7 +212,7 @@ This repo can also run as a remote MCP server on Cloudflare Workers. The remote 
 
 The existing local stdio server remains unchanged for Codex and local Claude Desktop use. The Cloudflare entrypoint is `src/worker.ts`.
 
-The Worker also serves a browser demo at `/`: **Weekend Watch Concierge**. It supports solo picks and Watch Party mode, then builds a ranked movie shortlist using TMDB discovery, trending, now-playing, credits, posters, and watch-provider data. The browser app also includes a Workflow Demos panel with commands for script-first artifacts such as Weekly Streaming Radar, Provider Change Monitor, and Collection Gap Finder.
+The Worker also serves a browser demo at `/`: **Weekend Watch Concierge**. It supports solo picks and Watch Party mode, then builds a ranked movie shortlist using TMDB discovery, trending, now-playing, credits, posters, and watch-provider data. The browser app also includes a Help drawer for Cloudflare usage and a Workflow Demos panel with commands for script-first artifacts such as Weekly Streaming Radar, Provider Change Monitor, and Collection Gap Finder.
 
 The browser demo also includes an **MCP tool surface** panel that calls the deployed `/mcp` route, verifies the expected tool contract, and samples `compare_movies`, `find_where_to_watch`, `get_weekend_watchlist`, `plan_watch_party`, `build_franchise_watch_order`, `build_collection_gap_plan`, `recommend_from_taste_profile`, and `build_person_watch_path`.
 

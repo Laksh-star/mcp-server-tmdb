@@ -61,6 +61,12 @@ export function renderConciergeApp(): string {
       margin-bottom: 24px;
     }
 
+    .brand-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
     h1 {
       margin: 0;
       font-size: 24px;
@@ -78,6 +84,143 @@ export function renderConciergeApp(): string {
       text-align: center;
       font-size: 12px;
       white-space: nowrap;
+    }
+
+    .help-button,
+    .help-close {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      color: #06493f;
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    .help-button {
+      height: 32px;
+      padding: 0 11px;
+      font-size: 12px;
+    }
+
+    .help-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: none;
+      background: rgba(22, 22, 22, 0.3);
+    }
+
+    .help-backdrop[data-open="true"] {
+      display: block;
+    }
+
+    .help-drawer {
+      position: fixed;
+      inset: 0 0 0 auto;
+      z-index: 21;
+      width: min(460px, 100vw);
+      display: grid;
+      grid-template-rows: auto 1fr;
+      transform: translateX(100%);
+      transition: transform 160ms ease;
+      border-left: 1px solid var(--line);
+      background: #fffdf8;
+      box-shadow: var(--shadow);
+    }
+
+    .help-drawer[data-open="true"] {
+      transform: translateX(0);
+    }
+
+    .help-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .help-top h2 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    .help-close {
+      width: 36px;
+      height: 36px;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .help-body {
+      overflow: auto;
+      display: grid;
+      gap: 18px;
+      padding: 20px;
+    }
+
+    .help-section {
+      display: grid;
+      gap: 10px;
+    }
+
+    .help-section h3 {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .help-section p,
+    .help-section li {
+      margin: 0;
+      color: #343434;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .help-section ul {
+      display: grid;
+      gap: 6px;
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .help-code {
+      border-radius: 8px;
+      padding: 10px;
+      background: #f0ece4;
+      color: #23312f;
+      font-size: 12px;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+    }
+
+    .help-flow {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    .help-node {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: var(--panel);
+      color: #06493f;
+      font-size: 13px;
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .help-arrow {
+      color: var(--muted);
+      text-align: center;
+      font-size: 13px;
+      font-weight: 800;
     }
 
     form {
@@ -826,6 +969,13 @@ export function renderConciergeApp(): string {
         justify-content: flex-start;
       }
 
+      .help-drawer {
+        inset: 0;
+        width: 100vw;
+        min-height: 100vh;
+        border-left: 0;
+      }
+
       .trend-grid {
         grid-template-columns: 1fr;
       }
@@ -862,6 +1012,15 @@ export function renderConciergeApp(): string {
       .mcp-button {
         width: 100%;
       }
+
+      .brand {
+        align-items: flex-start;
+      }
+
+      .brand-actions {
+        flex-direction: column;
+        align-items: flex-end;
+      }
     }
   </style>
 </head>
@@ -870,7 +1029,10 @@ export function renderConciergeApp(): string {
     <aside class="controls">
       <div class="brand">
         <h1>Weekend Watch Concierge</h1>
-        <div id="status" class="status-pill">Ready</div>
+        <div class="brand-actions">
+          <button class="help-button" id="open-help" type="button" aria-controls="help-drawer" aria-expanded="false">Help</button>
+          <div id="status" class="status-pill">Ready</div>
+        </div>
       </div>
 
       <form id="concierge-form">
@@ -1073,9 +1235,56 @@ export function renderConciergeApp(): string {
     </section>
   </main>
 
+  <div class="help-backdrop" id="help-backdrop"></div>
+  <aside class="help-drawer" id="help-drawer" aria-labelledby="help-title" aria-hidden="true">
+    <div class="help-top">
+      <h2 id="help-title">Cloudflare Help</h2>
+      <button class="help-close" id="close-help" type="button" aria-label="Close help">x</button>
+    </div>
+    <div class="help-body">
+      <section class="help-section">
+        <h3>What this is</h3>
+        <p>This Cloudflare Worker is both a browser app and a remote MCP server backed by TMDB data.</p>
+      </section>
+      <section class="help-section">
+        <h3>Use the app</h3>
+        <ul>
+          <li>Use Weekend Watch Concierge for immediate solo picks.</li>
+          <li>Switch to Watch Party when a group needs a primary pick, backup, and wildcard.</li>
+          <li>Use Planning Lab to find franchise gaps from watched titles or TMDB IDs.</li>
+          <li>Use Workflow demos for local Markdown report commands.</li>
+        </ul>
+      </section>
+      <section class="help-section">
+        <h3>Remote MCP</h3>
+        <div class="help-code">Endpoint: /mcp</div>
+        <div class="help-code">Authorization: Bearer &lt;access-token&gt;</div>
+        <p>Main tools: get_weekend_watchlist, plan_watch_party, build_franchise_watch_order, build_collection_gap_plan, recommend_from_taste_profile, build_person_watch_path.</p>
+      </section>
+      <section class="help-section">
+        <h3>Cloudflare shape</h3>
+        <div class="help-flow">
+          <div class="help-node">TMDB API</div>
+          <div class="help-arrow">feeds</div>
+          <div class="help-node">Cloudflare Worker</div>
+          <div class="help-arrow">serves</div>
+          <div class="help-node">Browser app + /mcp endpoint</div>
+        </div>
+      </section>
+      <section class="help-section">
+        <h3>Auth</h3>
+        <p>If this deployment is protected, paste the access token into the sidebar once. The app stores it in this browser session and sends it to app APIs and MCP smoke checks.</p>
+      </section>
+    </div>
+  </aside>
+
   <script>
     const form = document.querySelector("#concierge-form");
     const statusEl = document.querySelector("#status");
+    const openHelp = document.querySelector("#open-help");
+    const closeHelp = document.querySelector("#close-help");
+    const helpDrawer = document.querySelector("#help-drawer");
+    const helpBackdrop = document.querySelector("#help-backdrop");
     const output = document.querySelector("#output");
     const notes = document.querySelector("#notes");
     const meta = document.querySelector("#meta");
@@ -1122,6 +1331,20 @@ export function renderConciergeApp(): string {
     ];
 
     accessToken.value = sessionStorage.getItem("tmdbConciergeAccessToken") || "";
+
+    function setHelpOpen(open) {
+      helpDrawer.dataset.open = String(open);
+      helpBackdrop.dataset.open = String(open);
+      helpDrawer.setAttribute("aria-hidden", String(!open));
+      openHelp.setAttribute("aria-expanded", String(open));
+    }
+
+    openHelp.addEventListener("click", () => setHelpOpen(true));
+    closeHelp.addEventListener("click", () => setHelpOpen(false));
+    helpBackdrop.addEventListener("click", () => setHelpOpen(false));
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") setHelpOpen(false);
+    });
 
     document.querySelectorAll(".mode-option").forEach((button) => {
       button.addEventListener("click", () => {

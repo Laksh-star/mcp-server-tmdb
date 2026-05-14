@@ -25,6 +25,10 @@ Mobile layout:
 
 ![Weekend Watch Concierge mobile layout](assets/weekend-watch-concierge-mobile.png)
 
+Cloudflare help drawer:
+
+![Weekend Watch Concierge help drawer](assets/weekend-watch-concierge-help.png)
+
 ## Live Deployment
 
 Browser app:
@@ -120,6 +124,8 @@ The **Workflow demos** panel lists local commands for Markdown artifact workflow
 - `npm run demo:collection-gaps`
 
 Those commands run outside the browser and intentionally stay script-first to avoid expanding the public MCP tool surface.
+
+The **Help** button opens a Cloudflare-focused guide drawer covering the browser app, remote MCP endpoint, access-token expectations, and the deployment shape.
 
 The **Planning Lab** panel calls:
 
