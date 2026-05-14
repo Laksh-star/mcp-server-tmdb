@@ -409,6 +409,85 @@ export function renderConciergeApp(): string {
       border-bottom: 1px solid var(--line);
     }
 
+    .workflow-panel {
+      display: grid;
+      gap: 14px;
+      margin-bottom: 24px;
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .workflow-head {
+      display: grid;
+      gap: 4px;
+    }
+
+    .workflow-head h3 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .workflow-head p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .workflow-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .workflow-card {
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      gap: 10px;
+      min-height: 210px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fffdf8;
+      padding: 12px;
+    }
+
+    .workflow-card h4 {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .workflow-card p {
+      margin: 0;
+      color: #343434;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .workflow-command {
+      min-height: 76px;
+      margin: 0;
+      overflow: auto;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      border-radius: 8px;
+      padding: 10px;
+      color: #23312f;
+      background: #f0ece4;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .workflow-artifact {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+    }
+
     .mcp-output {
       display: grid;
       gap: 12px;
@@ -651,7 +730,8 @@ export function renderConciergeApp(): string {
       }
 
       .mcp-kpis,
-      .mcp-samples {
+      .mcp-samples,
+      .workflow-grid {
         grid-template-columns: 1fr;
       }
     }
@@ -821,6 +901,33 @@ export function renderConciergeApp(): string {
           <button class="mcp-button" id="run-mcp-smoke" type="button">Run smoke</button>
         </div>
         <div id="mcp-output" class="empty">Run the smoke check to confirm the deployed MCP endpoint exposes the expected workflow tools.</div>
+      </section>
+
+      <section class="workflow-panel" aria-labelledby="workflow-heading">
+        <div class="workflow-head">
+          <h3 id="workflow-heading">Workflow demos</h3>
+          <p>Script-first workflows that generate local Markdown artifacts without adding more MCP tools.</p>
+        </div>
+        <div class="workflow-grid">
+          <article class="workflow-card">
+            <h4>Weekly Streaming Radar</h4>
+            <p>Trends, language momentum, action-ready picks, family-safe picks, and taste-profile probes.</p>
+            <pre class="workflow-command">npm run demo:weekly-radar -- --country US</pre>
+            <div class="workflow-artifact">Writes examples/weekly-streaming-radar.md</div>
+          </article>
+          <article class="workflow-card">
+            <h4>Provider Change Monitor</h4>
+            <p>Compares streaming, rental, and purchase providers against the previous JSON snapshot.</p>
+            <pre class="workflow-command">npm run demo:provider-monitor -- --country US --titles "The Matrix,Inception"</pre>
+            <div class="workflow-artifact">Writes examples/provider-change-monitor.md and examples/provider-change-snapshot.json</div>
+          </article>
+          <article class="workflow-card">
+            <h4>Collection Gap Finder</h4>
+            <p>Finds watched and missing franchise entries, remaining runtime, provider availability, and completion path.</p>
+            <pre class="workflow-command">npm run demo:collection-gaps -- --franchise "The Matrix" --watched "The Matrix" --country US</pre>
+            <div class="workflow-artifact">Writes examples/collection-gap-finder.md</div>
+          </article>
+        </div>
       </section>
 
       <div id="output" class="empty">No picks generated yet.</div>
