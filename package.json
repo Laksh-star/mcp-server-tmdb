@@ -18,7 +18,8 @@
     "demo:now-playing": "node scripts/now-playing-follow-on-demo.mjs",
     "demo:weekly-radar": "node scripts/weekly-streaming-radar.mjs",
     "demo:release-calendar": "node scripts/release-calendar-watchlist.mjs",
-    "demo:provider-monitor": "node scripts/provider-change-monitor.mjs"
+    "demo:provider-monitor": "node scripts/provider-change-monitor.mjs",
+    "demo:collection-gaps": "node scripts/collection-gap-finder.mjs"
   },
   "keywords": [],
   "author": "",

@@ -182,6 +182,29 @@ examples/provider-change-monitor.md
 examples/provider-change-snapshot.json
 ```
 
+## Collection Gap Finder
+
+The collection gap finder is script-first. It calls `build_franchise_watch_order`, compares the collection against titles or TMDB IDs you have already watched, and writes a Markdown completion plan with watched entries, missing entries, remaining runtime, provider availability, and a shortest completion path.
+
+Local stdio MCP:
+
+```bash
+npm run build
+set -a && source ./.env && set +a && npm run demo:collection-gaps -- --franchise "The Matrix" --watched "The Matrix" --country US --services "Netflix,Prime Video"
+```
+
+Cloudflare-hosted MCP:
+
+```bash
+TMDB_MCP_ACCESS_TOKEN=<your-access-token> node scripts/collection-gap-finder.mjs --mcp-url https://tmdb-mcp.<your-workers-subdomain>.workers.dev/mcp --franchise "The Matrix" --watched "The Matrix" --country US --services "Netflix,Prime Video"
+```
+
+The script writes:
+
+```text
+examples/collection-gap-finder.md
+```
+
 ## Remote MCP on Cloudflare Workers
 
 This repo can also run as a remote MCP server on Cloudflare Workers. The remote server exposes the same TMDB tools at `/mcp` over Streamable HTTP, so Claude, Cowork, Claude Desktop connectors, and other remote-MCP clients can connect to a public URL.

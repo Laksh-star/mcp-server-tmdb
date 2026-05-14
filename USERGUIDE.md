@@ -70,6 +70,7 @@ Keep something as a script when it is mainly for verification, a demo story, or 
 - `scripts/weekly-streaming-radar.mjs`: script-first weekly radar artifact
 - `scripts/release-calendar-watchlist.mjs`: script-first release calendar artifact
 - `scripts/provider-change-monitor.mjs`: script-first provider delta monitor with a JSON snapshot
+- `scripts/collection-gap-finder.mjs`: script-first franchise completion and gap artifact
 
 Scripts can chain existing tools without creating a new public MCP tool.
 
@@ -108,19 +109,20 @@ Recently added:
 - `scripts/weekly-streaming-radar.mjs`
 - `scripts/release-calendar-watchlist.mjs`
 - `scripts/provider-change-monitor.mjs`
+- `scripts/collection-gap-finder.mjs`
 - `familySafe` filtering inside `get_weekend_watchlist` and `plan_watch_party`
 
 Recommended next features, in order:
 
-1. **Collection Gap Finder**
-   - Tool: maybe MCP if it proves durable
-   - Output: watched/unwatched franchise entries, availability, and shortest completion path
-   - Why: extends franchise logic without adding raw TMDB wrappers.
-
-2. **Provider Monitor Promotion**
+1. **Provider Monitor Promotion**
    - Tool: only if recurring deltas become a common direct ask
    - Output: stable MCP result for provider additions/removals, likely backed by caller-supplied snapshots
    - Why: persistence belongs outside MCP until the storage boundary is explicit.
+
+2. **Collection Gap Promotion**
+   - Tool: maybe MCP if people ask for it directly
+   - Output: watched/unwatched franchise entries, availability, and shortest completion path
+   - Why: current script proves the workflow without adding another public tool yet.
 
 3. **Release Calendar Promotion**
    - Tool: only if the script proves it is used often
