@@ -21,6 +21,7 @@ import {
   ListToolsRequestSchema,
   ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
+import { buildCollectionGapPlan, collectionGapPlanSummary } from "./collection-gap.js";
 import { createWatchPartyPlanner, createWeekendConcierge } from "./concierge.js";
 import { buildFranchiseWatchOrder, franchiseGuideSummary } from "./franchise.js";
 import { buildPersonWatchPath, personWatchPathSummary } from "./person-path.js";
@@ -635,6 +636,38 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         },
       },
       {
+        name: "build_collection_gap_plan",
+        description: "Build a franchise completion plan by comparing watched titles or TMDB IDs against a collection, with missing entries, remaining runtime, provider availability, and a recommended completion path",
+        inputSchema: {
+          type: "object",
+          properties: {
+            query: {
+              type: "string",
+              description: "Franchise or collection query, for example The Matrix, Dune, Batman, or Mission Impossible.",
+            },
+            watchedTitles: {
+              type: "array",
+              items: { type: "string" },
+              description: "Titles or TMDB movie IDs already watched.",
+            },
+            country: {
+              type: "string",
+              description: "ISO 3166-1 country code for watch-provider availability. Defaults to IN.",
+            },
+            services: {
+              type: "array",
+              items: { type: "string" },
+              description: "Preferred streaming services, for example Netflix or Prime Video.",
+            },
+            maxMovies: {
+              type: "string",
+              description: "Maximum number of collection entries to include, from 2 to 20. Defaults to 12.",
+            },
+          },
+          required: ["query"],
+        },
+      },
+      {
         name: "recommend_from_taste_profile",
         description: "Recommend movies from liked and disliked titles with provider-aware scoring, match reasons, and watch-out notes",
         inputSchema: {
@@ -1060,6 +1093,27 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         return {
           content: [{ type: "text", text: franchiseGuideSummary(result) }],
+          isError: false,
+        };
+      }
+
+      case "build_collection_gap_plan": {
+        const result = await buildCollectionGapPlan(
+          {
+            TMDB_API_KEY,
+            TMDB_BASE_URL,
+          },
+          {
+            query: request.params.arguments?.query as string | undefined,
+            watchedTitles: request.params.arguments?.watchedTitles as string[] | undefined,
+            country: request.params.arguments?.country as string | undefined,
+            services: request.params.arguments?.services as string[] | undefined,
+            maxMovies: request.params.arguments?.maxMovies as string | undefined,
+          },
+        );
+
+        return {
+          content: [{ type: "text", text: collectionGapPlanSummary(result) }],
           isError: false,
         };
       }

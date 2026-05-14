@@ -10,6 +10,7 @@ For the architecture split between the reusable MCP server and higher-level feat
 - **get_weekend_watchlist** — Ranked weekend shortlist by mood, country, language, runtime, rating, and services
 - **plan_watch_party** — Group movie-night plan with a primary pick, backup, wildcard, party-fit reasons, provider availability, and avoided-title filtering
 - **build_franchise_watch_order** — Franchise/universe guide with release order, suggested order, total runtime, and provider-aware notes
+- **build_collection_gap_plan** — Franchise completion plan with watched/missing entries, remaining runtime, provider availability, and completion path
 - **recommend_from_taste_profile** — Recommendations from liked/disliked titles with provider-aware scoring, match reasons, and cautions
 - **search_movies** — Search by title/keywords → titles, IDs, ratings, overviews
 - **get_trending** — Top 10 trending movies (`timeWindow`: "day" | "week")
@@ -70,7 +71,7 @@ In Codex, a fresh session should show `TMDB` in the plugin list and expose the `
 
 ## Tool Surface Smoke
 
-Use this smoke test after adding or merging tools. It verifies the expected MCP tool contract and calls the main workflow tools: `compare_movies`, `find_where_to_watch`, `get_weekend_watchlist`, `plan_watch_party`, `build_franchise_watch_order`, `recommend_from_taste_profile`, and `build_person_watch_path`.
+Use this smoke test after adding or merging tools. It verifies the expected MCP tool contract and calls the main workflow tools: `compare_movies`, `find_where_to_watch`, `get_weekend_watchlist`, `plan_watch_party`, `build_franchise_watch_order`, `build_collection_gap_plan`, `recommend_from_taste_profile`, and `build_person_watch_path`.
 
 Local stdio MCP:
 
@@ -184,7 +185,7 @@ examples/provider-change-snapshot.json
 
 ## Collection Gap Finder
 
-The collection gap finder is script-first. It calls `build_franchise_watch_order`, compares the collection against titles or TMDB IDs you have already watched, and writes a Markdown completion plan with watched entries, missing entries, remaining runtime, provider availability, and a shortest completion path.
+The collection gap finder script now calls the promoted MCP tool `build_collection_gap_plan` and writes a repeatable Markdown completion report with watched entries, missing entries, remaining runtime, provider availability, and a shortest completion path.
 
 Local stdio MCP:
 
@@ -213,7 +214,7 @@ The existing local stdio server remains unchanged for Codex and local Claude Des
 
 The Worker also serves a browser demo at `/`: **Weekend Watch Concierge**. It supports solo picks and Watch Party mode, then builds a ranked movie shortlist using TMDB discovery, trending, now-playing, credits, posters, and watch-provider data. The browser app also includes a Workflow Demos panel with commands for script-first artifacts such as Weekly Streaming Radar, Provider Change Monitor, and Collection Gap Finder.
 
-The browser demo also includes an **MCP tool surface** panel that calls the deployed `/mcp` route, verifies the expected tool contract, and samples `compare_movies`, `find_where_to_watch`, `get_weekend_watchlist`, `plan_watch_party`, `build_franchise_watch_order`, `recommend_from_taste_profile`, and `build_person_watch_path`.
+The browser demo also includes an **MCP tool surface** panel that calls the deployed `/mcp` route, verifies the expected tool contract, and samples `compare_movies`, `find_where_to_watch`, `get_weekend_watchlist`, `plan_watch_party`, `build_franchise_watch_order`, `build_collection_gap_plan`, `recommend_from_taste_profile`, and `build_person_watch_path`.
 
 ![Weekend Watch Concierge Workflow Demos panel](docs/assets/weekend-watch-concierge-home.png)
 
@@ -359,6 +360,7 @@ node scripts/concierge-smoke.mjs https://tmdb-mcp.<your-workers-subdomain>.worke
 The app uses:
 
 - `POST /api/concierge` for ranked movie picks
+- `POST /api/collection-gap-plan` for Planning Lab collection gaps
 - `GET /health` for deployment health
 - `POST /mcp` for remote MCP clients
 
@@ -384,6 +386,14 @@ Agents can call `build_franchise_watch_order` for a collection or universe guide
 
 - `query`: franchise or collection name, for example `The Matrix`, `Dune`, `Batman`, or `Mission Impossible`
 - `country`: watch-provider region, for example `IN` or `US`
+- `maxMovies`: maximum collection entries to include, from 2 to 20
+
+Agents can call `build_collection_gap_plan` for franchise completion planning. It accepts:
+
+- `query`: franchise or collection name
+- `watchedTitles`: watched titles or TMDB movie IDs
+- `country`: watch-provider region, for example `IN` or `US`
+- `services`: preferred streaming services
 - `maxMovies`: maximum collection entries to include, from 2 to 20
 
 Agents can call `recommend_from_taste_profile` for personalized recommendations. It accepts:

@@ -57,6 +57,7 @@ try {
   const requiredTools = [
     "build_person_watch_path",
     "build_franchise_watch_order",
+    "build_collection_gap_plan",
     "search_movies",
     "recommend_from_taste_profile",
     "plan_watch_party",
