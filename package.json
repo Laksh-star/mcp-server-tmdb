@@ -17,7 +17,8 @@
     "demo:weekly-trending": "node scripts/weekly-trending-languages.mjs",
     "demo:now-playing": "node scripts/now-playing-follow-on-demo.mjs",
     "demo:weekly-radar": "node scripts/weekly-streaming-radar.mjs",
-    "demo:release-calendar": "node scripts/release-calendar-watchlist.mjs"
+    "demo:release-calendar": "node scripts/release-calendar-watchlist.mjs",
+    "demo:provider-monitor": "node scripts/provider-change-monitor.mjs"
   },
   "keywords": [],
   "author": "",

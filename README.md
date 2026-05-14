@@ -158,6 +158,30 @@ The script writes:
 examples/release-calendar-watchlist.md
 ```
 
+## Provider Change Monitor
+
+The provider monitor is script-first because it needs persisted state. It calls `find_where_to_watch`, compares the current provider list against a JSON snapshot, and writes a Markdown delta report showing new, removed, unchanged, and missing provider availability.
+
+Local stdio MCP:
+
+```bash
+npm run build
+set -a && source ./.env && set +a && npm run demo:provider-monitor -- --country US --titles "The Matrix,Inception" --services "Netflix,Prime Video"
+```
+
+Cloudflare-hosted MCP:
+
+```bash
+TMDB_MCP_ACCESS_TOKEN=<your-access-token> node scripts/provider-change-monitor.mjs --mcp-url https://tmdb-mcp.<your-workers-subdomain>.workers.dev/mcp --country US --titles "The Matrix,Inception" --services "Netflix,Prime Video"
+```
+
+The script writes:
+
+```text
+examples/provider-change-monitor.md
+examples/provider-change-snapshot.json
+```
+
 ## Remote MCP on Cloudflare Workers
 
 This repo can also run as a remote MCP server on Cloudflare Workers. The remote server exposes the same TMDB tools at `/mcp` over Streamable HTTP, so Claude, Cowork, Claude Desktop connectors, and other remote-MCP clients can connect to a public URL.
