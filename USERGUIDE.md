@@ -127,7 +127,7 @@ Recommended next features, in order:
 2. **Planning Lab Expansion**
    - Status: partially implemented in the Worker browser app
    - Output: interactive tabs for collection gaps, taste profile, and person path workflows
-   - Next: add release calendar as a Planning Lab tab once the UI contract is clear.
+   - Release Calendar is available as a Planning Lab tab, including recent-release backfill and separate subscription/rental/purchase availability.
 
 3. **Release Calendar Promotion**
    - Status: implemented as `build_release_calendar_watchlist`

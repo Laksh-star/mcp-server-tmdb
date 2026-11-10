@@ -1,3 +1,5 @@
+import { planningTabs, planningPanes, planningScript } from "./planning-app.js";
+
 export function renderConciergeApp(): string {
   return `<!doctype html>
 <html lang="en">
@@ -1218,6 +1220,7 @@ export function renderConciergeApp(): string {
           <button class="planning-tab" type="button" data-planning-tab="gaps" aria-pressed="true">Gaps</button>
           <button class="planning-tab" type="button" data-planning-tab="taste" aria-pressed="false">Taste</button>
           <button class="planning-tab" type="button" data-planning-tab="person" aria-pressed="false">Person</button>
+          ${planningTabs()}
         </div>
         <div class="planning-pane" data-planning-pane="gaps">
           <form id="collection-gap-form" class="planning-form">
@@ -1302,6 +1305,7 @@ export function renderConciergeApp(): string {
           </form>
           <div id="person-output" class="empty">Enter a person to build a starter watch path from their filmography.</div>
         </div>
+      ${planningPanes()}
       </section>
 
       <section class="workflow-panel" aria-labelledby="workflow-heading">
@@ -2165,6 +2169,7 @@ export function renderConciergeApp(): string {
         .replaceAll("\\"", "&quot;")
         .replaceAll("'", "&#039;");
     }
+    ${planningScript()}
   </script>
 </body>
 </html>`;

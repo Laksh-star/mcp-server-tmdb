@@ -1241,7 +1241,7 @@ export default {
       }, { headers: securityHeaders() });
     }
 
-    if (request.method === "OPTIONS" && (url.pathname === "/api/concierge" || url.pathname === "/api/watch-party" || url.pathname === "/api/weekly-trending-languages" || url.pathname === "/api/collection-gap-plan" || url.pathname === "/api/taste-profile" || url.pathname === "/api/person-watch-path")) {
+    if (request.method === "OPTIONS" && (url.pathname === "/api/concierge" || url.pathname === "/api/watch-party" || url.pathname === "/api/weekly-trending-languages" || url.pathname === "/api/collection-gap-plan" || url.pathname === "/api/taste-profile" || url.pathname === "/api/person-watch-path" || url.pathname === "/api/release-calendar")) {
       return new Response(null, {
         status: 204,
         headers: {
@@ -1416,6 +1416,18 @@ export default {
             },
           },
         );
+      }
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/release-calendar") {
+      if (!authorized(request, env)) return unauthorizedResponse();
+      try {
+        const input = await request.json();
+        const result = await buildReleaseCalendarWatchlist(env, input as Record<string, unknown>);
+        return Response.json(result, { headers: { ...securityHeaders(), "access-control-allow-origin": "*" } });
+      } catch (error) {
+        return Response.json({ error: error instanceof Error ? error.message : "Unable to build release calendar." },
+          { status: error instanceof SyntaxError ? 400 : 500, headers: { ...securityHeaders(), "access-control-allow-origin": "*" } });
       }
     }
 
