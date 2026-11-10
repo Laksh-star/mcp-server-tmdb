@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Installation and coverage
+
+- Add a read-only installation doctor with optional API/Docker checks, JSON output, redacted credentials, and offline MCP discovery.
+- Add a portable Node launcher; retain the shell wrapper and parse env files as data with explicit environment precedence.
+- Add a non-root stdio Docker image, allowlisted build context, and independently locked minimal runtime dependencies.
+- Add `plan_streaming_coverage` to local/remote MCP and My Watchlist, with subscription coverage, overlap, greedy additions, and explicit unknown-data handling.
+- Add coverage, doctor, launcher, HTTP/MCP, and container workflow verification. Root/Worker dependency advisories remain separately documented follow-up work.
+
 ### Personal Availability Radar
 
 - Add `check_watchlist_availability` to local/remote MCP and Radar inside My Watchlist.

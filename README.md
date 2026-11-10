@@ -6,7 +6,7 @@
   <a href="https://github.com/Laksh-star/mcp-server-tmdb/stargazers"><img src="https://img.shields.io/github/stars/Laksh-star/mcp-server-tmdb?style=flat-square&amp;color=0b6b5d" alt="GitHub stars"></a>
   <a href="https://github.com/Laksh-star/mcp-server-tmdb/network/members"><img src="https://img.shields.io/github/forks/Laksh-star/mcp-server-tmdb?style=flat-square&amp;color=0b6b5d" alt="GitHub forks"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-0b6b5d?style=flat-square" alt="MIT license"></a>
-  <a href="#tools"><img src="https://img.shields.io/badge/MCP_tools-26-0b6b5d?style=flat-square" alt="26 MCP tools"></a>
+  <a href="#tools"><img src="https://img.shields.io/badge/MCP_tools-27-0b6b5d?style=flat-square" alt="27 MCP tools"></a>
 </p>
 
 <p align="center">
@@ -24,7 +24,7 @@
 
 Connect an MCP client such as Codex or Claude Desktop, or use the included **Weekend Watch Concierge** browser app. The same shared workflows power local stdio and remote Streamable HTTP MCP.
 
-> **New in Planning Lab:** Release Calendar · TV Binge Planner · Saved Watchlists · Personal Availability Radar
+> **New in Planning Lab:** Release Calendar · TV Binge Planner · Saved Watchlists · Personal Availability Radar · Streaming Service Coverage
 
 ## What you can do
 
@@ -67,7 +67,14 @@ npm install
 cp .env.example .env
 ```
 
-Add your key to `.env`. Then choose how to connect:
+Add your key to `.env`, then check the setup:
+
+```bash
+npm run doctor
+npm run doctor -- --online  # Optional: validate the key and TMDB connectivity
+```
+
+The doctor is read-only and hides credential values. See the [diagnostic guide](docs/installation.md#diagnose-a-checkout) for repairs and JSON output. Then choose how to connect:
 
 **Repo installer on macOS** — reads `.env` and configures the local Codex/Claude Desktop integrations:
 
@@ -97,6 +104,34 @@ Use an absolute path to the built entrypoint and provide the key through the cli
 ```
 
 `npm install` runs the build. After source changes, run `npm run build` and restart the MCP client. The repo launcher loads `.env`; a direct `node` command needs the key in its environment.
+
+</details>
+
+## Docker stdio MCP
+
+Build locally and pass the key at runtime:
+
+```bash
+docker build -t mcp-server-tmdb:local .
+docker run --rm -i -e TMDB_API_KEY mcp-server-tmdb:local
+```
+
+Set `TMDB_API_KEY` in your terminal/client environment first. The non-root image serves stdio MCP; keep `-i` and omit `-t`. The browser app and remote MCP use Cloudflare, described below.
+
+[Docker client configuration and verification](docs/installation.md#build-the-docker-image) · [Portable Node launcher](docs/installation.md#portable-node-launcher)
+
+## Streaming Service Coverage
+
+Open **My Watchlist → Streaming Service Coverage**. Select your existing services in the sidebar and compare a saved list. See how many titles they cover, what overlaps, and which additional services cover the most remaining titles.
+
+The `plan_streaming_coverage` MCP tool accepts up to 50 movie/TV IDs, a country, current service names or exact provider IDs, and a limit of 0–3 additional services. Suggestions use a greedy coverage heuristic, not subscription prices. Rentals and purchases do not count; missing/failed lookups remain unknown. The browser uses the first 50 unwatched, non-disliked saved entries.
+
+<details>
+<summary><b>See a coverage comparison</b></summary>
+
+![Streaming service coverage with controlled fixture data](docs/assets/streaming-coverage-fixture.jpg)
+
+This screenshot uses synthetic titles and controlled provider listings to illustrate coverage and overlap. It is not a current catalog or pricing claim.
 
 </details>
 
@@ -133,7 +168,7 @@ The first response creates a baseline. On the next call, add `"previousSnapshot"
 
 ## Tools
 
-**26 tools**, organized around decisions and reusable discovery primitives.
+**27 tools**, organized around decisions and reusable discovery primitives.
 
 | Workflow tool | What it helps you decide |
 | --- | --- |
@@ -142,6 +177,7 @@ The first response creates a baseline. On the next call, add `"previousSnapshot"
 | `recommend_from_taste_profile` | What fits your liked/disliked movies. |
 | `build_tv_binge_plan` | Which series fits an estimated viewing budget. |
 | `build_release_calendar_watchlist` | Which upcoming/recent movies to track. |
+| `plan_streaming_coverage` | Which services cover your saved titles and what additional coverage they offer. |
 | `check_watchlist_availability` | What changed on your saved titles’ providers. |
 | `build_franchise_watch_order` | Where to start and how to watch a collection. |
 | `build_collection_gap_plan` | Which franchise entries you still need. |
@@ -195,6 +231,7 @@ For local browser development: `npm run worker:dev`, then open `http://127.0.0.1
 npm test                         # Build + offline workflow, history, Radar, and stdio MCP checks
 TMDB_API_KEY=dummy npm run smoke:plugin
 npm run worker:dry-run
+npm run smoke:docker              # After building the local image
 ```
 
 For live tool verification, load your local environment and run `npm run smoke:tools`. It also supports `--mcp-url` for a hosted Worker. See [verification instructions](docs/planning-verification.md) for authenticated HTTP, remote MCP, and browser fixtures.

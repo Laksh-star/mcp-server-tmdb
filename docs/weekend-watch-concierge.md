@@ -249,3 +249,12 @@ separate from watchlist JSON exports. Checks run manually; no notifications are 
 The equivalent MCP tool is `check_watchlist_availability`. Supply saved movie/TV IDs and
 keep the returned `snapshot` on the client for the next call. The Worker stores no personal
 watchlist or baseline. The browser endpoint is `POST /api/availability-radar`.
+
+
+### Streaming Service Coverage
+
+Inside My Watchlist, compare saved titles against subscriptions selected in the sidebar.
+The browser calls `POST /api/streaming-coverage`, backed by `plan_streaming_coverage` on both
+MCP transports. The result shows current coverage, service overlap, and suggested additions
+up to a limit of 0–3. Only subscriptions count. Unknown lookups remain explicit; prices and
+cost optimization are outside this workflow. The planner does not change Radar baselines.
