@@ -79,7 +79,7 @@ export async function buildTVBingePlan(env: Env, rawInput: unknown) {
   const input = tvBingeInputSchema.parse(rawInput);
   const country = input.country.toUpperCase();
   const notes = [
-    "Viewing times are estimates for the whole series, excluding specials. Episode runtimes can vary.",
+    "Viewing times estimate the whole series using TMDB episode counts and runtimes. Episode lengths can vary.",
     "Ended is a TMDB status, not a guarantee that a story has a satisfying conclusion.",
     "Provider listings are regional series-level data and may not cover every season. Availability: TMDB / JustWatch.",
   ];
@@ -95,7 +95,7 @@ export async function buildTVBingePlan(env: Env, rawInput: unknown) {
     include_adult: "false", sort_by: "vote_average.desc", "vote_count.gte": "100",
     "vote_average.gte": String(input.minRating), watch_region: country,
   };
-  if (input.completedOnly) params.with_status = "4";
+  if (input.completedOnly) params.with_status = "3";
   if (input.language !== "any") params.with_original_language = input.language;
   if (genreIds.length) params.with_genres = genreIds.join("|");
   const first = await tmdb<{ results: TVSummary[]; total_pages: number }>(env, "/discover/tv", params);
@@ -106,6 +106,14 @@ export async function buildTVBingePlan(env: Env, rawInput: unknown) {
       candidates = [...candidates, ...second.results];
     } catch { notes.push("The second discovery page was unavailable; this shortlist uses the first page."); }
   }
+  // High-rated general discovery is dominated by long-running shows. Reserve room
+  // for miniseries so short viewing budgets get useful candidates too.
+  try {
+    const mini = await tmdb<{ results: TVSummary[] }>(env, "/discover/tv", { ...params, with_type: "2" });
+    candidates = input.maxHours <= 24
+      ? [...mini.results.slice(0, 16), ...candidates]
+      : [...candidates.slice(0, 20), ...mini.results, ...candidates.slice(20)];
+  } catch { notes.push("Miniseries discovery was unavailable; only general series were checked."); }
   const excluded = new Set(input.excludeTVIds);
   candidates = [...new Map(candidates.map((show) => [show.id, show])).values()].filter((show) => !excluded.has(show.id)).slice(0, 30);
   const settled = await Promise.allSettled(candidates.map((show) => tmdb<TVDetails>(env, `/tv/${show.id}`, { append_to_response: "watch/providers" })));
@@ -157,7 +165,7 @@ export function tvBingePlanSummary(result: Awaited<ReturnType<typeof buildTVBing
   return `TV Binge Planner (${result.country})\nBudget: ${result.maxHours} hours · ${result.minutesPerDay} minutes/day\n` +
     `Ended series only: ${result.completedOnly ? "yes" : "no"}\n\n` + result.picks.map((pick, index) =>
       `${index + 1}. ${pick.title} (${pick.year}) — TV ID: ${pick.id}\n` +
-      `${pick.rating}/10 · ${pick.status} · ${pick.seasons} seasons · ${pick.episodes} episodes\n` +
+      `${pick.rating}/10 · ${pick.status} · ${pick.seasons} season${pick.seasons === 1 ? "" : "s"} · ${pick.episodes} episode${pick.episodes === 1 ? "" : "s"}\n` +
       `Estimated viewing time: ${pick.estimatedRuntimeMinutes} min · about ${pick.estimatedDays} days\n` +
       `${pick.reasons.join("; ")}\nSubscription: ${pick.providers.streaming.join(", ") || "none listed"}\n` +
       `Rent: ${pick.providers.rent.join(", ") || "none listed"} · Buy: ${pick.providers.buy.join(", ") || "none listed"}`

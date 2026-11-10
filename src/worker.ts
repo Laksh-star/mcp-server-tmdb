@@ -10,8 +10,8 @@ import { buildFranchiseWatchOrder, franchiseGuideSummary } from "./franchise";
 import { buildPersonWatchPath, personWatchPathSummary } from "./person-path";
 import { buildReleaseCalendarWatchlist, releaseCalendarWatchlistSummary } from "./release-calendar";
 import { recommendFromTasteProfile, tasteProfileSummary } from "./taste";
-
 import { buildTVBingePlan, tvBingeInputSchema, tvBingePlanSummary } from "./tv-binge";
+import { excludedMovieIdsSchema } from "./viewing-history";
 
 interface Env {
   TMDB_API_KEY?: string;
@@ -541,6 +541,17 @@ async function genreIdFor(env: Env, genre: string): Promise<{ id?: number; avail
   };
 }
 
+const releaseCalendarRequestSchema = z.object({
+  country: z.string().regex(/^[a-zA-Z]{2}$/).optional(),
+  language: z.string().regex(/^(any|[a-z]{2})$/).optional(),
+  genre: z.string().trim().max(80).optional(),
+  days: z.string().regex(/^\d+$/).optional(),
+  recentDays: z.string().regex(/^\d+$/).optional(),
+  services: z.array(z.string().max(80)).max(10).optional(),
+  minRating: z.string().regex(/^\d+(\.\d+)?$/).optional(),
+  maxResults: z.string().regex(/^\d+$/).optional(),
+});
+
 function createTMDBServer(env: Env): McpServer {
   const server = new McpServer({
     name: "tmdb-cloudflare",
@@ -552,6 +563,7 @@ function createTMDBServer(env: Env): McpServer {
     {
       description: "Generate a ranked movie shortlist for a weekend watch session using mood, country, language, runtime, rating, and streaming services",
       inputSchema: {
+        excludeMovieIds: excludedMovieIdsSchema,
         mood: z
           .enum(["crowd", "thriller", "thoughtful", "funny", "family", "mindbend"])
           .optional()
@@ -565,8 +577,9 @@ function createTMDBServer(env: Env): McpServer {
       },
       annotations: READ_ONLY_TOOL,
     },
-    async ({ mood, country, language, runtime, minRating, services, familySafe }) => {
+    async ({ excludeMovieIds, mood, country, language, runtime, minRating, services, familySafe }) => {
       const result = await createWeekendConcierge(env, {
+        excludeMovieIds,
         mood,
         country,
         language,
@@ -584,6 +597,7 @@ function createTMDBServer(env: Env): McpServer {
     {
       description: "Plan a group movie night by merging mood scans, provider availability, runtime fit, ratings, and avoided titles into a primary pick, backup pick, and wildcard",
       inputSchema: {
+        excludeMovieIds: excludedMovieIdsSchema,
         moods: z
           .array(z.enum(["crowd", "thriller", "thoughtful", "funny", "family", "mindbend"]))
           .max(3)
@@ -600,8 +614,9 @@ function createTMDBServer(env: Env): McpServer {
       },
       annotations: READ_ONLY_TOOL,
     },
-    async ({ moods, groupSize, country, language, runtime, minRating, services, avoidTitles, familySafe }) => {
+    async ({ excludeMovieIds, moods, groupSize, country, language, runtime, minRating, services, avoidTitles, familySafe }) => {
       const result = await createWatchPartyPlanner(env, {
+        excludeMovieIds,
         moods,
         groupSize,
         country,
@@ -667,6 +682,7 @@ function createTMDBServer(env: Env): McpServer {
     {
       description: "Recommend movies from liked and disliked titles with provider-aware scoring, match reasons, and watch-out notes",
       inputSchema: {
+        excludeMovieIds: excludedMovieIdsSchema,
         likedTitles: z.array(z.string()).min(1).max(5).describe("Movies the user likes. At least one is required."),
         dislikedTitles: z.array(z.string()).max(5).optional().describe("Movies the user dislikes or wants to avoid stylistically"),
         country: z.string().optional().describe("ISO 3166-1 country code for watch-provider availability, defaults to IN"),
@@ -678,8 +694,9 @@ function createTMDBServer(env: Env): McpServer {
       },
       annotations: READ_ONLY_TOOL,
     },
-    async ({ likedTitles, dislikedTitles, country, services, language, runtime, minRating, maxResults }) => {
+    async ({ excludeMovieIds, likedTitles, dislikedTitles, country, services, language, runtime, minRating, maxResults }) => {
       const result = await recommendFromTasteProfile(env, {
+        excludeMovieIds,
         likedTitles,
         dislikedTitles,
         country,
@@ -1448,12 +1465,12 @@ export default {
     if (request.method === "POST" && url.pathname === "/api/release-calendar") {
       if (!authorized(request, env)) return unauthorizedResponse();
       try {
-        const input = await request.json();
-        const result = await buildReleaseCalendarWatchlist(env, input as Record<string, unknown>);
+        const input = releaseCalendarRequestSchema.parse(await request.json());
+        const result = await buildReleaseCalendarWatchlist(env, input);
         return Response.json(result, { headers: { ...securityHeaders(), "access-control-allow-origin": "*" } });
       } catch (error) {
         return Response.json({ error: error instanceof Error ? error.message : "Unable to build release calendar." },
-          { status: error instanceof SyntaxError ? 400 : 500, headers: { ...securityHeaders(), "access-control-allow-origin": "*" } });
+          { status: error instanceof z.ZodError || error instanceof SyntaxError ? 400 : 500, headers: { ...securityHeaders(), "access-control-allow-origin": "*" } });
       }
     }
 

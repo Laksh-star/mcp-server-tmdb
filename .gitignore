@@ -11,3 +11,6 @@ CLOUDFLARE_REMOTE_MCP_NOTES.md
 
 # API key test file (contains sensitive data)
 test_api_key.py
+
+# Local browser verification output
+.playwright-mcp/

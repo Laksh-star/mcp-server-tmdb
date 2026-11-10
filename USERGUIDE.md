@@ -106,6 +106,20 @@ If a feature fails those checks, keep it as shared code or a script until it pro
 | `compare_movies` | Choose between known movie IDs | Side-by-side tradeoffs |
 | `find_where_to_watch` | Check availability for one or more titles | Actionable provider lookup |
 
+## Personal Watch State
+
+The browser stores a versioned watchlist in `localStorage` (`tmdbConciergeWatchlist.v1`).
+It keeps movie and TV IDs separate and supports portable JSON backups. Watch state is
+never saved to the Worker or TMDB account. Multiple tabs receive storage updates.
+
+The browser sends watched/disliked IDs to recommendation workflows. Headless MCP callers
+supply their own `excludeMovieIds` or `excludeTVIds`. `build_collection_gap_plan` continues
+to accept `watchedTitles`, which can contain string movie IDs; the browser merges watched
+movie IDs into that input. Lists are limited to 2,000 items and imports to 2 MB.
+
+Local and remote MCP expose `build_tv_binge_plan` through the same validated shared module.
+The TV tool adds one workflow rather than separate endpoint wrappers for each TV resource.
+
 ## Feature Pipeline
 
 Recently added:
@@ -133,7 +147,7 @@ Recommended next features, in order:
 3. **Release Calendar Promotion**
    - Status: implemented as `build_release_calendar_watchlist`
    - Output: stable MCP result for release-window watch decisions
-   - Next: consider adding recent-release backfill or saved watchlist state outside MCP.
+   - Recent-release backfill and a browser-local saved watchlist are implemented. MCP stays stateless; clients supply watched-ID exclusions.
 
 ## Verification Checklist
 

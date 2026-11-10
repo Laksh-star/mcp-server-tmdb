@@ -178,8 +178,29 @@ It is available in local and remote MCP, and in the browser's **Planning Lab →
 Times estimate the whole series from TMDB episode runtimes, or explicitly assume 45 minutes
 per episode when runtimes are missing. Cancelled shows do not count as Ended. Services are
 required subscription matches when provided; rental/purchase availability is separate.
-Series-level provider listings may not cover every season. Discovery checks at most two
-pages and 30 series, so an empty result does not prove no matching show exists.
+Series-level provider listings may not cover every season. Discovery checks up to two general pages, one miniseries page,
+and 30 series, so an empty result does not prove no matching show exists.
+
+## Saved Watchlists and Viewing History
+
+Open **Planning Lab → My Watchlist** in the browser app. Save movie/TV results, mark
+entries Watched, and record Liked or Disliked preferences. **Use saved movie tastes**
+loads up to five liked and five disliked movies into the Taste form.
+
+- Data stays in this browser for this site's origin; it is not synced to TMDB or stored on the Worker.
+- Watched and disliked entries are excluded from new solo, watch-party, taste, and TV binge recommendations.
+- Watched movie IDs also populate collection-gap progress. Release calendars and person paths remain browsable guides.
+- Export/import JSON to back up or move your list. Imports merge by media type and TMDB ID, with newer timestamps winning. Invalid files leave the list unchanged.
+- Limits: 2,000 entries and 2 MB per import. Export before clearing site data or changing domains.
+- MCP clients own their history: pass `excludeMovieIds` to `get_weekend_watchlist`, `plan_watch_party`, and `recommend_from_taste_profile`; pass `excludeTVIds` to `build_tv_binge_plan`. These are arrays of numeric TMDB IDs.
+
+The screenshots below use deterministic fixture data, not current TMDB titles or availability.
+
+![TV Binge Planner with fixture data](docs/assets/tv-binge-planner.png)
+
+![Saved watchlist with fixture data](docs/assets/saved-watchlist.png)
+
+For repeatable API/browser verification without a TMDB key, see [planning verification](docs/planning-verification.md).
 
 ## Provider Change Monitor
 
@@ -234,7 +255,7 @@ This repo can also run as a remote MCP server on Cloudflare Workers. The remote 
 
 The existing local stdio server remains unchanged for Codex and local Claude Desktop use. The Cloudflare entrypoint is `src/worker.ts`.
 
-The Worker also serves a browser demo at `/`: **Weekend Watch Concierge**. It supports solo picks and Watch Party mode, then builds a ranked movie shortlist using TMDB discovery, trending, now-playing, credits, posters, and watch-provider data. The browser app also includes a Help drawer for Cloudflare usage and a Workflow Demos panel with commands for script-first artifacts such as Weekly Streaming Radar, Provider Change Monitor, and Collection Gap Finder.
+The Worker also serves a browser demo at `/`: **Weekend Watch Concierge**. It supports solo picks and Watch Party mode, then builds a ranked movie shortlist using TMDB discovery, trending, now-playing, credits, posters, and watch-provider data. Planning Lab includes Release Calendar, TV Binge Planner, and My Watchlist alongside Gaps, Taste, and Person. The browser app also includes a Help drawer for Cloudflare usage and a Workflow Demos panel with commands for script-first artifacts such as Weekly Streaming Radar, Provider Change Monitor, and Collection Gap Finder.
 
 The browser demo also includes an **MCP tool surface** panel that calls the deployed `/mcp` route, verifies the expected tool contract, and samples `compare_movies`, `find_where_to_watch`, `get_weekend_watchlist`, `plan_watch_party`, `build_franchise_watch_order`, `build_collection_gap_plan`, `recommend_from_taste_profile`, and `build_person_watch_path`.
 

@@ -1,3 +1,5 @@
+import { excludedMovieIds } from "./viewing-history.js";
+
 interface Env {
   TMDB_API_KEY?: string;
   TMDB_BASE_URL?: string;
@@ -5,6 +7,7 @@ interface Env {
 
 interface TasteProfileInput {
   likedTitles?: string[];
+  excludeMovieIds?: number[];
   dislikedTitles?: string[];
   country?: string;
   services?: string[];
@@ -259,6 +262,7 @@ export async function recommendFromTasteProfile(
   env: Env,
   rawInput: TasteProfileInput,
 ): Promise<TasteProfileResult> {
+  const excludedIds = excludedMovieIds(rawInput.excludeMovieIds);
   const likedTitles = (rawInput.likedTitles || []).map((title) => title.trim()).filter(Boolean).slice(0, 5);
   if (likedTitles.length === 0) {
     throw new Error("recommend_from_taste_profile requires at least one liked title.");
@@ -284,7 +288,7 @@ export async function recommendFromTasteProfile(
 
   const preferredGenreIds = new Set(likedMovies.flatMap((movie) => movie.genres?.map((genre) => genre.id) || []));
   const dislikedGenreIds = new Set(dislikedMovies.flatMap((movie) => movie.genres?.map((genre) => genre.id) || []));
-  const blockedIds = new Set([...likedMovies, ...dislikedMovies].map((movie) => movie.id));
+  const blockedIds = new Set([...excludedIds, ...[...likedMovies, ...dislikedMovies].map((movie) => movie.id)]);
   const blockedTitles = new Set([...likedTitles, ...dislikedTitles].map(titleKey));
 
   const candidateGroups = await Promise.all(likedMovies.map((movie) => candidateMoviesFor(env, movie.id)));

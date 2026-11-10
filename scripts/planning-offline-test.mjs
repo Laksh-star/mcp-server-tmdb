@@ -5,6 +5,8 @@ import vm from "node:vm";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { buildTVBingePlan } from "../dist/tv-binge.js";
+import { watchlistModelScript } from "../dist/watchlist-app.js";
+import { recommendFromTasteProfile } from "../dist/taste.js";
 import { renderConciergeApp } from "../dist/concierge-app.js";
 
 const series = {
@@ -21,8 +23,16 @@ const fixture = createServer((req, res) => {
   const url = new URL(req.url, "http://localhost");
   requests.push(url.pathname);
   let payload;
+  const movie = (id) => ({ id, title: "Movie " + id, release_date: "2020-01-01", vote_average: 8, genres: [{ id: 80, name: "Crime" }], runtime: 90 });
+  if (url.pathname === "/search/movie") payload = { results: [movie(10)] };
+  if (/^\/movie\/10\/(recommendations|similar)$/.test(url.pathname)) payload = { results: [movie(11), movie(12)] };
+  const movieMatch = url.pathname.match(/^\/movie\/(\d+)$/);
+  if (movieMatch) payload = movie(Number(movieMatch[1]));
   if (url.pathname === "/genre/tv/list") payload = { genres: [{ id: 9648, name: "Mystery" }, { id: 80, name: "Crime" }] };
-  if (url.pathname === "/discover/tv") payload = { results: Object.keys(series).map((id) => ({ id: Number(id) })), total_pages: 1 };
+  if (url.pathname === "/discover/tv") {
+    if (url.searchParams.has("with_status")) assert.equal(url.searchParams.get("with_status"), "3", "TMDB status 3 is Ended");
+    payload = { results: Object.keys(series).map((id) => ({ id: Number(id) })), total_pages: 1 };
+  }
   const match = url.pathname.match(/^\/tv\/(\d+)$/);
   if (match && !failDetails) {
     const id = Number(match[1]);
@@ -67,9 +77,29 @@ try {
   await assert.rejects(buildTVBingePlan(env, {}), /TV details are unavailable/);
   failDetails = false;
 
+  const tastes = await recommendFromTasteProfile(env, { likedTitles: ["Movie 10"], excludeMovieIds: [11] });
+  assert.deepEqual(tastes.picks.map((pick) => pick.id), [12]);
+
+  const model = vm.createContext({});
+  vm.runInContext(watchlistModelScript(), model);
+  const entry = { id: 1, mediaType: "movie", title: "A Movie", year: "2020", status: "watched", preference: "liked", updatedAt: "2026-01-01T00:00:00Z" };
+  const current = model.parseWatchlist({ version: 1, items: [entry] });
+  const imported = model.parseWatchlist({ version: 1, items: [{ ...entry, mediaType: "tv", title: "A Series", unexpectedSecret: "discard" }] });
+  const merged = model.mergeWatchlists(current, imported);
+  assert.equal(merged.items.length, 2, "Movie and TV IDs must stay distinct");
+  assert.equal(merged.items[1].unexpectedSecret, undefined);
+  assert.equal(model.mergeWatchlists(current, current).items.length, 1, "Imports must not create duplicates");
+  const older = model.parseWatchlist({ version: 1, items: [{ ...entry, status: "watchlist", updatedAt: "2025-01-01T00:00:00Z" }] });
+  assert.equal(model.mergeWatchlists(current, older).items[0].status, "watched", "Older imports must not overwrite newer state");
+  for (const bad of [
+    { version: 99, items: [] }, { version: 1, items: [{ ...entry, id: -1 }] },
+    { version: 1, items: [{ ...entry, title: null }] }, { version: 1, items: [{ ...entry, status: "invented" }] },
+    { version: 1, items: [{ ...entry, updatedAt: "invalid" }] }, { version: 1, items: Array(2001).fill(entry) },
+  ]) assert.throws(() => model.parseWatchlist(bad));
+
   const html = renderConciergeApp();
   for (const [, script] of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) new vm.Script(script);
-  assert.ok(html.includes('id="calendar-form"') && html.includes('id="binge-form"'));
+  assert.ok(html.includes('id="calendar-form"') && html.includes('id="binge-form"') && html.includes('id="library-output"'));
 
   client = new Client({ name: "planning-offline-test", version: "1.0.0" });
   await client.connect(new StdioClientTransport({ command: "node", args: ["dist/index.js"], env: { ...process.env, ...env }, stderr: "inherit" }));
@@ -77,6 +107,7 @@ try {
   const tool = tools.tools.find((tool) => tool.name === "build_tv_binge_plan");
   assert.ok(tool);
   assert.equal(tool.inputSchema.properties.maxHours.type, "number");
+  assert.equal(tool.inputSchema.required?.length || 0, 0, "Defaulted planner inputs must be optional in the MCP schema");
   const result = await client.callTool({ name: tool.name, arguments: { country: "US", maxHours: 6, services: ["Netflix"] } });
   assert.ok(!result.isError);
   assert.match(result.content[0].text, /TV Binge Planner/);

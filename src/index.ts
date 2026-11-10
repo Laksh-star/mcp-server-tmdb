@@ -531,6 +531,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         inputSchema: {
           type: "object",
           properties: {
+            excludeMovieIds: { type: "array", items: { type: "integer", minimum: 1 }, maxItems: 2000,
+              description: "Watched or unwanted TMDB movie IDs to exclude; supplied by the caller" },
             mood: {
               type: "string",
               enum: ["crowd", "thriller", "thoughtful", "funny", "family", "mindbend"],
@@ -571,6 +573,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         inputSchema: {
           type: "object",
           properties: {
+            excludeMovieIds: { type: "array", items: { type: "integer", minimum: 1 }, maxItems: 2000,
+              description: "Watched or unwanted TMDB movie IDs to exclude; supplied by the caller" },
             moods: {
               type: "array",
               items: {
@@ -677,6 +681,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         inputSchema: {
           type: "object",
           properties: {
+            excludeMovieIds: { type: "array", items: { type: "integer", minimum: 1 }, maxItems: 2000,
+              description: "Watched or unwanted TMDB movie IDs to exclude; supplied by the caller" },
             likedTitles: {
               type: "array",
               items: { type: "string" },
@@ -791,7 +797,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       {
         name: "build_tv_binge_plan",
         description: "Find TV series within an estimated whole-series time budget, with Ended-only filtering, daily viewing plans, and regional subscription availability",
-        inputSchema: z.toJSONSchema(tvBingeInputSchema) as { type: "object"; properties: Record<string, unknown> },
+        inputSchema: z.toJSONSchema(tvBingeInputSchema, { io: "input" }) as { type: "object"; properties: Record<string, unknown> },
         annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
       },
       {
@@ -1090,6 +1096,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           },
           {
             mood: request.params.arguments?.mood as string | undefined,
+            excludeMovieIds: request.params.arguments?.excludeMovieIds as number[] | undefined,
             country: request.params.arguments?.country as string | undefined,
             language: request.params.arguments?.language as string | undefined,
             runtime: request.params.arguments?.runtime as string | undefined,
@@ -1114,6 +1121,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           {
             moods: request.params.arguments?.moods as string[] | undefined,
             groupSize: request.params.arguments?.groupSize as string | undefined,
+            excludeMovieIds: request.params.arguments?.excludeMovieIds as number[] | undefined,
             country: request.params.arguments?.country as string | undefined,
             language: request.params.arguments?.language as string | undefined,
             runtime: request.params.arguments?.runtime as string | undefined,
@@ -1179,6 +1187,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           {
             likedTitles: request.params.arguments?.likedTitles as string[] | undefined,
             dislikedTitles: request.params.arguments?.dislikedTitles as string[] | undefined,
+            excludeMovieIds: request.params.arguments?.excludeMovieIds as number[] | undefined,
             country: request.params.arguments?.country as string | undefined,
             services: request.params.arguments?.services as string[] | undefined,
             language: request.params.arguments?.language as string | undefined,

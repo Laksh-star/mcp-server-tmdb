@@ -34,6 +34,8 @@ export function planningScript(): string {
   return String.raw`
     async function planningRequest(endpoint, payload) {
       const token = String(accessToken.value || "").trim();
+      if (token) sessionStorage.setItem("tmdbConciergeAccessToken", token);
+      else sessionStorage.removeItem("tmdbConciergeAccessToken");
       const response = await fetch(endpoint, {
         method: "POST",
         headers: { "content-type": "application/json", ...(token ? { authorization: "Bearer " + token } : {}) },
@@ -72,15 +74,15 @@ export function planningScript(): string {
         const result = await planningRequest("/api/tv-binge-plan", {
           country: data.get("country"), genre: data.get("genre"),
           maxHours: Number(data.get("maxHours")), minutesPerDay: Number(data.get("minutesPerDay")),
-          completedOnly: data.has("completedOnly"), services: selectedPlanningServices(), language: form.elements.language.value,
+          completedOnly: data.has("completedOnly"), excludeTVIds: watchedIds("tv"), services: selectedPlanningServices(), language: form.elements.language.value,
         });
         target.className = "lab-output";
         target.innerHTML = renderDecisionSection("TV Binge Planner · " + result.country, result.decision) +
           '<ol class="lab-list">' + result.picks.map((pick) =>
             '<li class="lab-item"><strong>' + escapeHtml(pick.title + " (" + pick.year + ")") + '</strong><span>' +
-            escapeHtml(pick.rating + "/10 · " + pick.status + " · " + pick.seasons + " seasons · " + pick.episodes + " episodes") +
+            escapeHtml(pick.rating + "/10 · " + pick.status + " · " + pick.seasons + (pick.seasons === 1 ? " season · " : " seasons · ") + pick.episodes + (pick.episodes === 1 ? " episode" : " episodes")) +
             '</span><span>Estimated viewing time: ' + escapeHtml(formatMinutes(pick.estimatedRuntimeMinutes)) + '</span>' +
-            '<span>' + escapeHtml(pick.reasons.join(" · ")) + '</span>' + planningProviders(pick.providers) + '</li>'
+            '<span>' + escapeHtml(pick.reasons.join(" · ")) + '</span>' + planningProviders(pick.providers) + watchlistActions(pick, 'tv') + '</li>'
           ).join("") + '</ol>' + renderDecisionSection("Notes", result.notes);
       } catch (error) {
         target.className = "error";
@@ -113,7 +115,7 @@ export function planningScript(): string {
           '<ol class="lab-list">' + result.picks.map((pick) =>
             '<li class="lab-item"><strong>' + escapeHtml(pick.title + " (" + pick.year + ")") + '</strong><span>' +
             escapeHtml((pick.releaseDate || "Date unknown") + " · " + pick.releaseStatus) + '</span>' +
-            planningProviders(pick.providers) + '<span>' + escapeHtml((pick.reasons || []).join(" · ")) + '</span></li>'
+            planningProviders(pick.providers) + '<span>' + escapeHtml((pick.reasons || []).join(" · ")) + '</span>' + watchlistActions(pick) + '</li>'
           ).join("") + '</ol>' + renderDecisionSection("Notes", [...(result.notes || []), "Availability data: TMDB / JustWatch."]);
       } catch (error) {
         target.className = "error";
