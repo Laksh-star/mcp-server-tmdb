@@ -6,7 +6,8 @@ import { localEnvironment } from "../../../scripts/local-environment.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 try {
-  if (Number(process.versions.node.split(".")[0]) < 22) throw new Error("Node.js 22 or later is required. Run npm run doctor after upgrading.");
+  const [major, minor] = process.versions.node.split(".").map(Number);
+  if (major < 22 || (major === 22 && minor < 12)) throw new Error("Node.js 22.12 or later is required. Run npm run doctor after upgrading.");
   const { env } = localEnvironment(root);
   if (!env.TMDB_API_KEY?.trim() || /^(your_tmdb|fixture-key$|dummy$)/i.test(env.TMDB_API_KEY)) throw new Error("Configure TMDB_API_KEY in the client environment or the repo .env file. Run npm run doctor for details.");
   if (!fs.existsSync(path.join(root, "dist/index.js"))) throw new Error("Missing dist/index.js. Run npm install and npm run build, then restart the MCP client.");

@@ -7,6 +7,29 @@ const token = process.env.TMDB_MCP_ACCESS_TOKEN || "fixture-token";
 const post = (route, body, auth = true) => fetch(new URL(route, base), {
   method: "POST", headers: { "content-type": "application/json", ...(auth ? { authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(body),
 });
+// Exercise the security-sensitive transport boundary, not just its tool handlers.
+assert.equal((await post("/mcp", {}, false)).status, 401);
+assert.equal((await fetch(new URL("/mcp", base), { headers: { authorization: "Bearer wrong-token" } })).status, 401);
+assert.equal((await fetch(new URL("/not-a-route", base))).status, 404);
+const rpcHeaders = { authorization: `Bearer ${token}`, "content-type": "application/json", accept: "application/json, text/event-stream" };
+const rpcPost = (body) => fetch(new URL("/mcp", base), { method: "POST", headers: rpcHeaders, body });
+assert.equal((await rpcPost("{invalid")).status, 400);
+const batch = await rpcPost(JSON.stringify(Array.from({ length: 101 }, (_, id) => ({ jsonrpc: "2.0", id, method: "tools/list" }))));
+assert.equal(batch.status, 400);
+assert.match((await batch.json()).error.message, /Batch must not exceed/);
+assert.equal((await rpcPost(JSON.stringify({ padding: "x".repeat(4 * 1024 * 1024) }))).status, 413);
+// No Content-Length: verify the limit also applies while consuming streamed input.
+const streamed = await fetch(new URL("/mcp", base), {
+  method: "POST", headers: rpcHeaders, duplex: "half",
+  body: new ReadableStream({ start(controller) {
+    for (let i = 0; i < 5; i++) controller.enqueue(new Uint8Array(1024 * 1024).fill(32));
+    controller.close();
+  } }),
+});
+assert.equal(streamed.status, 413);
+const preflight = await fetch(new URL("/mcp", base), { method: "OPTIONS", headers: { "access-control-request-headers": "authorization, mcp-protocol-version" } });
+assert.equal(preflight.status, 204);
+assert.match(preflight.headers.get("access-control-allow-headers"), /mcp-protocol-version/);
 for (const route of ["/api/release-calendar", "/api/tv-binge-plan", "/api/availability-radar", "/api/streaming-coverage"]) {
   assert.equal((await post(route, {}, false)).status, 401);
   const preflight = await fetch(new URL(route, base), { method: "OPTIONS" });
@@ -54,6 +77,7 @@ const client = new Client({ name: "planning-http-test", version: "1.0.0" });
 try {
   await client.connect(new StreamableHTTPClientTransport(new URL("/mcp", base), { requestInit: { headers: { authorization: `Bearer ${token}` } } }));
   const tools = await client.listTools();
+  assert.equal(tools.tools.length, 27);
   const bingeTool = tools.tools.find((tool) => tool.name === "build_tv_binge_plan");
   assert.ok(bingeTool);
   assert.equal(bingeTool.inputSchema.required?.length || 0, 0);
@@ -72,5 +96,13 @@ try {
   assert.equal(coverageTool.structuredContent.current.coveredCount, 2);
   const invalid = await client.callTool({ name: "build_tv_binge_plan", arguments: { maxHours: -1 } });
   assert.equal(invalid.isError, true);
-  console.log("Planning HTTP tests passed: auth, CORS, validation, calendar, viewing history, availability deltas, and remote MCP.");
+  const concurrent = await Promise.all(Array.from({ length: 3 }, async () => {
+    const other = new Client({ name: "parallel-http-test", version: "1.0.0" });
+    try {
+      await other.connect(new StreamableHTTPClientTransport(new URL("/mcp", base), { requestInit: { headers: { authorization: `Bearer ${token}` } } }));
+      return (await other.listTools()).tools.length;
+    } finally { await other.close(); }
+  }));
+  assert.deepEqual(concurrent, [27, 27, 27]);
+  console.log("Planning HTTP tests passed: auth, CORS, malformed/oversized requests, batch limits, validation, workflows, 27 tools, and concurrent remote MCP clients.");
 } finally { await client.close(); }

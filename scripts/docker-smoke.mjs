@@ -9,8 +9,9 @@ const user = execFileSync("docker", ["image", "inspect", image, "--format", "{{.
 assert.ok(user && !["root", "0", "0:0"].includes(user), "Container must run as a non-root user");
 const client = new Client({ name: "tmdb-docker-smoke", version: "1.0.0" });
 try {
-  await client.connect(new StdioClientTransport({ command: "docker", args: ["run", "--rm", "-i", "-e", "TMDB_API_KEY", ...(fixtureBase ? ["-e", "TMDB_BASE_URL"] : []), image], env: { ...process.env, TMDB_API_KEY: "docker-offline-probe", ...(fixtureBase ? { TMDB_BASE_URL: fixtureBase } : {}) }, stderr: "inherit" }));
+  await client.connect(new StdioClientTransport({ command: "docker", args: ["run", "--rm", "-i", "-e", "TMDB_API_KEY", ...(fixtureBase ? ["--add-host=host.docker.internal:host-gateway", "-e", "TMDB_BASE_URL"] : []), image], env: { ...process.env, TMDB_API_KEY: "docker-offline-probe", ...(fixtureBase ? { TMDB_BASE_URL: fixtureBase } : {}) }, stderr: "inherit" }));
   const { tools } = await client.listTools();
+  assert.equal(tools.length, 27, "Container must expose the complete tool surface");
   for (const name of ["search_movies", "check_watchlist_availability", "plan_streaming_coverage"]) assert.ok(tools.some((tool) => tool.name === name), `Missing ${name}`);
   if (fixtureBase) {
     const result = await client.callTool({ name: "plan_streaming_coverage", arguments: { country: "US", titles: [{ id: 101, mediaType: "movie", title: "Neon Case" }, { id: 101, mediaType: "tv", title: "Short Mystery" }], services: ["Netflix"] } });

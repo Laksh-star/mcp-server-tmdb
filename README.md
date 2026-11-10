@@ -6,6 +6,7 @@
   <a href="https://github.com/Laksh-star/mcp-server-tmdb/stargazers"><img src="https://img.shields.io/github/stars/Laksh-star/mcp-server-tmdb?style=flat-square&amp;color=0b6b5d" alt="GitHub stars"></a>
   <a href="https://github.com/Laksh-star/mcp-server-tmdb/network/members"><img src="https://img.shields.io/github/forks/Laksh-star/mcp-server-tmdb?style=flat-square&amp;color=0b6b5d" alt="GitHub forks"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-0b6b5d?style=flat-square" alt="MIT license"></a>
+  <a href="https://github.com/Laksh-star/mcp-server-tmdb/actions/workflows/ci.yml"><img src="https://github.com/Laksh-star/mcp-server-tmdb/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI status"></a>
   <a href="#tools"><img src="https://img.shields.io/badge/MCP_tools-27-0b6b5d?style=flat-square" alt="27 MCP tools"></a>
 </p>
 
@@ -58,7 +59,7 @@ Concierge, calendar, TV, and watchlist screenshots were captured from the deploy
 
 ## Quick start
 
-Use **Node.js 22+** and a [TMDB API key](https://www.themoviedb.org/settings/api).
+Use **Node.js 22.12+** and a [TMDB API key](https://www.themoviedb.org/settings/api).
 
 ```bash
 git clone https://github.com/Laksh-star/mcp-server-tmdb.git
@@ -119,6 +120,8 @@ docker run --rm -i -e TMDB_API_KEY mcp-server-tmdb:local
 Set `TMDB_API_KEY` in your terminal/client environment first. The non-root image serves stdio MCP; keep `-i` and omit `-t`. The browser app and remote MCP use Cloudflare, described below.
 
 [Docker client configuration and verification](docs/installation.md#build-the-docker-image) · [Portable Node launcher](docs/installation.md#portable-node-launcher)
+
+[Container releases](docs/releases.md) are built for `linux/amd64` and `linux/arm64` after a published GitHub release passes CI. The first registry image is pending the workflow merge and a new release; local builds work now.
 
 ## Streaming Service Coverage
 

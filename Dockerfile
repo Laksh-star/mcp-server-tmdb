@@ -5,8 +5,7 @@ COPY src ./src
 RUN npm ci --ignore-scripts \
     && npm run build
 
-# The stdio image does not need the Cloudflare Worker framework. Keep its runtime
-# dependencies in a separate lockfile so container fixes do not migrate the Worker.
+# Lock the minimal stdio runtime independently from build/deployment tooling.
 FROM node:22-bookworm-slim AS stdio-deps
 WORKDIR /app
 COPY docker/package.json docker/package-lock.json ./

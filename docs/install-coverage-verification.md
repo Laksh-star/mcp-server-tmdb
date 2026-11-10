@@ -35,12 +35,12 @@ its own network request fails.
 
 ## Dependency findings
 
-The existing root production dependency graph reported 19 advisories, including one critical.
-The full build graph reported additional development findings. This change does not migrate
-the Cloudflare framework or root MCP SDK/Zod stack. The final stdio image uses its own small,
-locked runtime graph with zero known audit findings at verification time. See the
-[dependency boundary and remaining follow-up](installation.md#container-dependency-boundary).
-A dated audit result does not establish that an application is vulnerability-free.
+At the installation/coverage checkpoint, the root production graph reported 19 advisories,
+including one critical; the separate container runtime reported zero. The subsequent
+[security and CI update](security-ci-verification.md) upgrades SDK/Zod/build tooling and
+removes the unused Cloudflare framework, bringing all three npm audit scopes to zero
+known findings on 10 November 2026. These dated results do not establish that the
+application or operating-system image is vulnerability-free.
 
 ## Reproduction
 

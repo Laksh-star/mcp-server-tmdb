@@ -16,8 +16,9 @@ if (args.includes("--help")) {
 }
 const checks = [];
 const add = (id, status, message) => checks.push({ id, status, message });
-const modernNode = Number(process.versions.node.split(".")[0]) >= 22;
-add("node", modernNode ? "pass" : "fail", modernNode ? `Node ${process.versions.node}; executable: ${process.execPath}` : "Node.js 22+ required. Upgrade Node, then rerun this command.");
+const [nodeMajor, nodeMinor] = process.versions.node.split(".").map(Number);
+const modernNode = nodeMajor > 22 || (nodeMajor === 22 && nodeMinor >= 12);
+add("node", modernNode ? "pass" : "fail", modernNode ? `Node ${process.versions.node}; executable: ${process.execPath}` : "Node.js 22.12+ required for the source checkout. Upgrade Node, then rerun this command.");
 let runtime = { env: { ...process.env }, sources: {} };
 try { if (modernNode) runtime = localEnvironment(root); }
 catch (error) { add("env-files", "fail", error.message); }

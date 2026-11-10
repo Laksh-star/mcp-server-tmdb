@@ -1,6 +1,6 @@
 # Installation doctor and Docker
 
-Use Node.js 22+ for a source checkout. The doctor is read-only: it does not change client configuration, install packages, or print credential values.
+Use Node.js 22.12+ for a source checkout (the current Wrangler toolchain requires it). The doctor is read-only: it does not change client configuration, install packages, or print credential values.
 
 ## Diagnose a checkout
 
@@ -19,7 +19,7 @@ The doctor can inspect another checkout with `--repo /absolute/path/to/checkout`
 
 | Finding | Repair |
 | --- | --- |
-| Node version too old | Install Node 22+ and check which executable the client launches. The doctor prints the current Node executable path. |
+| Node version too old | Install Node 22.12+ and check which executable the client launches. The doctor prints the current Node executable path. |
 | Dependencies missing | Run `npm ci` or `npm install`. |
 | Missing/stale build | Run `npm run build`, then restart the MCP client. |
 | Missing/placeholder key | Set `TMDB_API_KEY` in the client's environment or repo `.env`. |
@@ -89,17 +89,19 @@ Example MCP client configuration, after building the local image:
 }
 ```
 
-The image runs as the non-root `node` user. Its allowlisted build context includes source/package inputs and excludes local env files, client configs, git history, and artifacts. Credentials are supplied at runtime, not copied into image layers. No image has been published to a registry by this change.
+The image runs as the non-root `node` user. Its allowlisted build context includes source/package inputs and excludes local env files, client configs, git history, and artifacts. Credentials are supplied at runtime, not copied into image layers. See [container releases](releases.md) for the CI-gated registry workflow and first-publication status.
 
 ## Container dependency boundary
 
-The TypeScript build uses the root project lockfile. The final stdio image installs from `docker/package.json` and `docker/package-lock.json`, which include only the MCP SDK, Node fetch, and schema library. The Cloudflare `agents` framework is not needed in that image. The container's SDK/schema versions are compatible patches/minor releases locked independently of the existing Worker stack.
+The TypeScript build uses the root project lockfile. The final stdio image installs from `docker/package.json` and `docker/package-lock.json`, which include only the MCP SDK, Node fetch, and schema library. The Worker now uses the MCP SDK's native web-standard HTTP transport; the Cloudflare `agents` framework has been removed. Keep both lockfiles audited when changing shared runtime dependencies.
 
-On 10 November 2026, `npm audit --omit=dev --prefix docker` reported **zero known advisories** for the container runtime lockfile. This is a dated audit result, not a security guarantee. The existing root production graph reported **19 advisories, including one critical**, and is not upgraded by this change. The critical finding concerned [`proxy-addr` before 2.0.8](https://github.com/advisories/GHSA-jqcg-44mw-7w3h); the root MCP SDK, pinned `agents` SDK, and Zod also have reported findings. Audit output alone does not establish exploitability in this application. A root/Worker dependency upgrade needs its own compatibility review and remains follow-up work.
+On 10 November 2026, the full root graph, root production graph, and container runtime lockfile each reported **zero known npm audit advisories** after the dependency update. The previous root production result was 19, including one critical. See the [security and CI verification record](security-ci-verification.md) for the changes and transport checks. These are dated npm results; the base operating-system image is outside that audit.
 
 To reproduce the container runtime audit:
 
 ```bash
+npm audit
+npm audit --omit=dev
 npm audit --omit=dev --prefix docker
 ```
 
@@ -118,4 +120,13 @@ With the [planning fixture server](planning-verification.md) running, the contai
 npm run smoke:docker -- mcp-server-tmdb:local --fixture-base-url http://host.docker.internal:8791
 ```
 
-The default smoke performs a real stdio handshake and tool discovery without a TMDB request. The optional fixture call exercises the coverage workflow inside the container. Linux hosts may need their own host-gateway address; the Docker Desktop hostname is not assumed portable to every engine.
+The default smoke performs a real stdio handshake and tool discovery without a TMDB request. The optional fixture call exercises the coverage workflow inside the container and adds Docker's host-gateway mapping for `host.docker.internal`. The fixture must listen on an interface reachable from Docker (for example, `0.0.0.0`), rather than only the host's loopback interface.
+
+For the repeatable fixture setup used by CI, build the image and run:
+
+```bash
+npm run docker:build
+npm run test:http -- --docker
+```
+
+This starts the fixture on port 8791 and a local Worker on port 8789, tests HTTP/MCP and container workflows, and stops both local services. It uses synthetic credentials and makes no TMDB requests. Omit `--docker` to test only the Worker.
