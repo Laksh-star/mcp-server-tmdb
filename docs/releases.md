@@ -1,8 +1,10 @@
 # Container releases
 
-Status: the image builds locally. The first GHCR publication requires this workflow
-to be merged and a new GitHub release targeting that merged commit. Existing releases
-are not republished automatically.
+Published: [Watch Planning & Containers — 10 November 2026](https://github.com/Laksh-star/mcp-server-tmdb/releases/tag/watch-planning-2026-11-10).
+The [public GHCR package](https://github.com/Laksh-star/mcp-server-tmdb/pkgs/container/mcp-server-tmdb)
+supports `linux/amd64` and `linux/arm64`. Both architectures passed anonymous pull,
+non-root execution, 27-tool discovery, and a fixture workflow call. See the
+[release verification record](container-release-verification.md) for exact digests.
 
 ## Maintainer sequence
 
@@ -13,9 +15,8 @@ are not republished automatically.
 3. Follow `Publish container` in Actions. It reruns CI against the release tag,
    then builds and pushes `ghcr.io/laksh-star/mcp-server-tmdb` for `linux/amd64`
    and `linux/arm64` using the repository's `GITHUB_TOKEN`.
-4. On first publication, check the package's visibility. GitHub creates new packages
-   as private by default. Set this open-source package to public in its package
-   settings, then verify an unauthenticated pull before announcing it.
+4. Check the package's visibility. If needed, set this open-source package to public
+   in its package settings, then verify an unauthenticated pull before announcing it.
 5. Pull the release tag, run the stdio smoke below, and record the returned digest
    in the release notes. Check the image manifest contains both architectures.
 
@@ -34,20 +35,20 @@ and [container registry visibility](https://docs.github.com/en/packages/working-
 
 ## Use a published image
 
-After the first successful publication, replace `<release-tag>` with the exact
-image tag shown by Actions:
+The first published tag is `watch-planning-2026-11-10`. For subsequent releases,
+substitute the exact tag shown by Actions:
 
 ```bash
-docker pull ghcr.io/laksh-star/mcp-server-tmdb:<release-tag>
-npm run smoke:docker -- ghcr.io/laksh-star/mcp-server-tmdb:<release-tag>
-docker buildx imagetools inspect ghcr.io/laksh-star/mcp-server-tmdb:<release-tag>
+docker pull ghcr.io/laksh-star/mcp-server-tmdb:watch-planning-2026-11-10
+npm run smoke:docker -- ghcr.io/laksh-star/mcp-server-tmdb:watch-planning-2026-11-10
+docker buildx imagetools inspect ghcr.io/laksh-star/mcp-server-tmdb:watch-planning-2026-11-10
 ```
 
 The smoke checks non-root execution, MCP initialization, and discovery of all 27 tools
 without calling TMDB. For real tool calls, supply your own API key at runtime:
 
 ```bash
-docker run --rm -i -e TMDB_API_KEY ghcr.io/laksh-star/mcp-server-tmdb:<release-tag>
+docker run --rm -i -e TMDB_API_KEY ghcr.io/laksh-star/mcp-server-tmdb:watch-planning-2026-11-10
 ```
 
 Set `TMDB_API_KEY` in the calling terminal or MCP client environment first. Keep `-i`

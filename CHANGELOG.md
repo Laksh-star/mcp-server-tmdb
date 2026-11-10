@@ -2,13 +2,20 @@
 
 ## Unreleased
 
+- Refresh the README/install guide with the public image, exact release/digest verification, and a GHCR badge.
+- Pin the Docker publisher actions to releases with native Node 24 runtimes, following the deprecation annotation in the first successful publish run.
+
+## Watch Planning & Containers — 2026-11-10
+
+Source release and public container: [watch-planning-2026-11-10](https://github.com/Laksh-star/mcp-server-tmdb/releases/tag/watch-planning-2026-11-10).
+
 ### Dependency maintenance and release automation
 
 - Upgrade the MCP SDK to 1.32.2, Zod to 4.6.7, and the Cloudflare build toolchain; refresh both direct and transitive locks. Source checkouts now require Node 22.12+.
 - Remove the unused Agents framework and serve stateless remote MCP through the SDK's web-standard transport with JSON responses and per-request cleanup. Preserve all 27 tools and bearer checks, and allow unauthenticated CORS preflight.
 - Add transport regression checks for malformed/oversized requests, batch limits, and concurrent clients.
 - Add GitHub Actions CI on pull requests/main, including Node 22/24, offline tests, audits, Worker fixtures, and a non-root Docker stdio workflow.
-- Add CI-gated GitHub release publishing to GHCR for amd64/arm64, with release/commit tags, provenance, and SBOM. First publication requires the merged workflow and a new release.
+- Publish the first CI-gated GHCR release for amd64/arm64, with release/commit tags, provenance, and SBOM. Both architectures passed anonymous pulls and MCP/fixture workflow verification.
 
 ### Installation and coverage
 

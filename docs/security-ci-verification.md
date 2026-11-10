@@ -44,5 +44,6 @@ The fixture orchestrator starts/stops its own Worker and TMDB test server on por
 is local test infrastructure, not part of the deployed Worker.
 
 The [release guide](releases.md) describes the CI gate and registry publication.
-The initial registry image remains pending the merged workflow and a new release.
-Local verification does not imply that a registry push has already succeeded.
+The subsequent [first container release](container-release-verification.md) passed
+the release workflow, anonymous pulls and runtime checks for both architectures.
+That record also covers verification of the merged Worker in production.
