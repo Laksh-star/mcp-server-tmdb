@@ -11,6 +11,8 @@ import { buildPersonWatchPath, personWatchPathSummary } from "./person-path";
 import { buildReleaseCalendarWatchlist, releaseCalendarWatchlistSummary } from "./release-calendar";
 import { recommendFromTasteProfile, tasteProfileSummary } from "./taste";
 
+import { buildTVBingePlan, tvBingeInputSchema, tvBingePlanSummary } from "./tv-binge";
+
 interface Env {
   TMDB_API_KEY?: string;
   TMDB_BASE_URL?: string;
@@ -746,6 +748,19 @@ function createTMDBServer(env: Env): McpServer {
   );
 
   server.registerTool(
+    "build_tv_binge_plan",
+    {
+      description: "Find TV series within an estimated whole-series time budget, with Ended-only filtering, daily viewing plans, and regional subscription availability",
+      inputSchema: tvBingeInputSchema.shape,
+      annotations: READ_ONLY_TOOL,
+    },
+    async (input) => {
+      const result = await buildTVBingePlan(env, input);
+      return { ...textResult(tvBingePlanSummary(result)), structuredContent: result };
+    },
+  );
+
+  server.registerTool(
     "search_movies",
     {
       description: "Search for movies by title or keywords",
@@ -1241,7 +1256,7 @@ export default {
       }, { headers: securityHeaders() });
     }
 
-    if (request.method === "OPTIONS" && (url.pathname === "/api/concierge" || url.pathname === "/api/watch-party" || url.pathname === "/api/weekly-trending-languages" || url.pathname === "/api/collection-gap-plan" || url.pathname === "/api/taste-profile" || url.pathname === "/api/person-watch-path" || url.pathname === "/api/release-calendar")) {
+    if (request.method === "OPTIONS" && (url.pathname === "/api/concierge" || url.pathname === "/api/watch-party" || url.pathname === "/api/weekly-trending-languages" || url.pathname === "/api/collection-gap-plan" || url.pathname === "/api/taste-profile" || url.pathname === "/api/person-watch-path" || url.pathname === "/api/release-calendar" || url.pathname === "/api/tv-binge-plan")) {
       return new Response(null, {
         status: 204,
         headers: {
@@ -1416,6 +1431,17 @@ export default {
             },
           },
         );
+      }
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/tv-binge-plan") {
+      if (!authorized(request, env)) return unauthorizedResponse();
+      try {
+        const result = await buildTVBingePlan(env, await request.json());
+        return Response.json(result, { headers: { ...securityHeaders(), "access-control-allow-origin": "*" } });
+      } catch (error) {
+        return Response.json({ error: error instanceof z.ZodError ? "Invalid TV planner inputs." : error instanceof Error ? error.message : "Unable to build TV plan." },
+          { status: error instanceof z.ZodError || error instanceof SyntaxError ? 400 : 500, headers: { ...securityHeaders(), "access-control-allow-origin": "*" } });
       }
     }
 

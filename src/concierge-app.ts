@@ -1420,6 +1420,7 @@ export function renderConciergeApp(): string {
       "build_collection_gap_plan",
       "build_franchise_watch_order",
       "build_release_calendar_watchlist",
+      "build_tv_binge_plan",
       "compare_movies",
       "find_where_to_watch",
       "get_movie_details",

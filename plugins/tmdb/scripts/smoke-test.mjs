@@ -55,6 +55,7 @@ try {
   console.log(toolNames.join(", "));
 
   const requiredTools = [
+    "build_tv_binge_plan",
     "build_person_watch_path",
     "build_franchise_watch_order",
     "build_collection_gap_plan",

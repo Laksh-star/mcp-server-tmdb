@@ -29,6 +29,7 @@ For the architecture split between the reusable MCP server and higher-level feat
 - **find_where_to_watch** — Search 1-5 movie titles and return streaming/rental/purchase availability with preferred-service matches
 
 ### TV Shows
+- **build_tv_binge_plan** — Find series within an estimated whole-series time budget, with Ended-only filtering, daily viewing plans, and regional subscription matches
 - **search_tv_shows** — Search TV series by title
 - **get_trending_tv** — Top 10 trending TV shows (`timeWindow`: "day" | "week")
 
@@ -159,6 +160,26 @@ The script writes:
 ```text
 examples/release-calendar-watchlist.md
 ```
+
+## TV Binge Planner
+
+Ask an MCP client:
+
+```text
+Find ended mystery series I can finish in 12 hours, available on Netflix in India.
+Plan for 120 minutes of viewing per day.
+```
+
+`build_tv_binge_plan` accepts `country`, `language`, `genre`, `maxHours` (number, 1–300),
+`minutesPerDay` (number, 15–720), `completedOnly` (boolean, default true), `services`,
+`minRating` (number, 0–9), `maxResults` (number, 1–8), and `excludeTVIds` (watched TV IDs).
+It is available in local and remote MCP, and in the browser's **Planning Lab → TV Binge Planner**.
+
+Times estimate the whole series from TMDB episode runtimes, or explicitly assume 45 minutes
+per episode when runtimes are missing. Cancelled shows do not count as Ended. Services are
+required subscription matches when provided; rental/purchase availability is separate.
+Series-level provider listings may not cover every season. Discovery checks at most two
+pages and 30 series, so an empty result does not prove no matching show exists.
 
 ## Provider Change Monitor
 

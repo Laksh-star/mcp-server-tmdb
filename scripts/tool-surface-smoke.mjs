@@ -22,6 +22,7 @@ const EXPECTED_TOOLS = [
   "build_collection_gap_plan",
   "build_franchise_watch_order",
   "build_release_calendar_watchlist",
+      "build_tv_binge_plan",
   "compare_movies",
   "find_where_to_watch",
   "get_movie_details",
@@ -309,6 +310,11 @@ async function main() {
     });
     assertIncludes(releaseCalendarText, "Release Calendar Watchlist", "build_release_calendar_watchlist");
 
+    const bingeText = await callToolText(client, "build_tv_binge_plan", {
+      country: "US", maxHours: 12, minutesPerDay: 120, completedOnly: true,
+    });
+    assertIncludes(bingeText, "TV Binge Planner", "build_tv_binge_plan");
+
     const generatedAt = new Date().toISOString();
     const artifact = [
       "# TMDB MCP Tool Surface Smoke",
@@ -329,6 +335,10 @@ async function main() {
       "```",
       "",
       "## Workflow Smoke Results",
+      "",
+      "### build_tv_binge_plan",
+      "",
+      fenced(excerpt(bingeText, 20)),
       "",
       "### compare_movies",
       "",

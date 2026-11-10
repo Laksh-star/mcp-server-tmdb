@@ -28,6 +28,9 @@ import { buildPersonWatchPath, personWatchPathSummary } from "./person-path.js";
 import { buildReleaseCalendarWatchlist, releaseCalendarWatchlistSummary } from "./release-calendar.js";
 import { recommendFromTasteProfile, tasteProfileSummary } from "./taste.js";
 
+import { z } from "zod";
+import { buildTVBingePlan, tvBingeInputSchema, tvBingePlanSummary } from "./tv-binge.js";
+
 // Type definitions
 interface Movie {
   id: number;
@@ -786,6 +789,12 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         },
       },
       {
+        name: "build_tv_binge_plan",
+        description: "Find TV series within an estimated whole-series time budget, with Ended-only filtering, daily viewing plans, and regional subscription availability",
+        inputSchema: z.toJSONSchema(tvBingeInputSchema) as { type: "object"; properties: Record<string, unknown> },
+        annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+      },
+      {
         name: "search_movies",
         description: "Search for movies by title or keywords",
         inputSchema: {
@@ -1227,6 +1236,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [{ type: "text", text: releaseCalendarWatchlistSummary(result) }],
           isError: false,
         };
+      }
+
+      case "build_tv_binge_plan": {
+        const result = await buildTVBingePlan({ TMDB_API_KEY, TMDB_BASE_URL }, request.params.arguments || {});
+        return { content: [{ type: "text", text: tvBingePlanSummary(result) }], structuredContent: result, isError: false };
       }
 
       case "search_movies": {

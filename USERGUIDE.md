@@ -102,6 +102,7 @@ If a feature fails those checks, keep it as shared code or a script until it pro
 | `recommend_from_taste_profile` | Recommend from liked and disliked titles | Personalized discovery |
 | `build_person_watch_path` | Find a starter path for an actor/director | Filmography decisions |
 | `build_release_calendar_watchlist` | Track upcoming release-window candidates | Watch-later planning |
+| `build_tv_binge_plan` | Find TV series that fit a viewing budget | Ended series, time estimates, regional subscriptions |
 | `compare_movies` | Choose between known movie IDs | Side-by-side tradeoffs |
 | `find_where_to_watch` | Check availability for one or more titles | Actionable provider lookup |
 
