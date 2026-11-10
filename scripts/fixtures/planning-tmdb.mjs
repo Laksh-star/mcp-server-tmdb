@@ -14,9 +14,27 @@ const shows = [
 ].map((show) => ({ ...show, number_of_seasons: 1, first_air_date: "2024-01-01", original_language: "en", vote_average: 8.2, vote_count: 800, genres: [{ id: 9648, name: "Mystery" }], "watch/providers": provider }));
 const list = (results) => ({ page: 1, total_pages: 1, results });
 export function createPlanningFixture() {
+  let radarMode = "baseline";
   return createServer((request, response) => {
     const url = new URL(request.url, "http://localhost");
+    if (url.pathname === "/__fixture/radar-mode" && request.method === "POST") {
+      radarMode = url.searchParams.get("mode") || "baseline";
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end(JSON.stringify({ mode: radarMode }));
+      return;
+    }
     let payload;
+    const providerMatch = url.pathname.match(/^\/(movie|tv)\/(\d+)\/watch\/providers$/);
+    if (providerMatch) {
+      if (radarMode === "failed") { response.writeHead(503); response.end(); return; }
+      const listings = radarMode === "changed" && providerMatch[1] === "movie"
+        ? { flatrate: [{ provider_id: 8, provider_name: "Netflix" }, { provider_id: 9, provider_name: "Amazon Prime Video" }], rent: [{ provider_id: 2, provider_name: "Apple TV Store" }] }
+        : { flatrate: [{ provider_id: 8, provider_name: "Netflix" }], rent: [] };
+      payload = { results: radarMode === "missing" ? {} : {
+        US: { ...listings, link: "https://www.themoviedb.org/" + providerMatch[1] + "/" + providerMatch[2] + "/watch?locale=US" },
+        IN: listings,
+      } };
+    }
     if (url.pathname === "/genre/movie/list") payload = { genres: [{ id: 28, name: "Action" }, { id: 35, name: "Comedy" }, { id: 9648, name: "Mystery" }] };
     if (url.pathname === "/genre/tv/list") payload = { genres: [{ id: 80, name: "Crime" }, { id: 9648, name: "Mystery" }] };
     if (["/discover/movie", "/trending/movie/week", "/movie/now_playing"].includes(url.pathname)) payload = list(movies);

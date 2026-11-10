@@ -1,9 +1,9 @@
 {
   "name": "mcp-server-tmdb",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
-    "test": "npm run build && node scripts/concierge-offline-test.mjs && node scripts/planning-offline-test.mjs",
+    "test": "npm run build && node scripts/concierge-offline-test.mjs && node scripts/planning-offline-test.mjs && node scripts/radar-offline-test.mjs",
     "build": "tsc && shx chmod +x dist/*.js",
     "prepare": "npm run build",
     "watch": "tsc --watch",
@@ -21,10 +21,17 @@
     "demo:provider-monitor": "node scripts/provider-change-monitor.mjs",
     "demo:collection-gaps": "node scripts/collection-gap-finder.mjs"
   },
-  "keywords": [],
+  "keywords": [
+    "mcp",
+    "tmdb",
+    "movies",
+    "tv",
+    "streaming",
+    "model-context-protocol"
+  ],
   "author": "",
-  "license": "ISC",
-  "description": "",
+  "license": "MIT",
+  "description": "Movie and TV discovery, watch planning, and availability radar for MCP clients, with a browser app and Cloudflare Worker transport.",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
     "agents": "^0.11.4",

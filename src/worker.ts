@@ -13,6 +13,8 @@ import { recommendFromTasteProfile, tasteProfileSummary } from "./taste";
 import { buildTVBingePlan, tvBingeInputSchema, tvBingePlanSummary } from "./tv-binge";
 import { excludedMovieIdsSchema } from "./viewing-history";
 
+import { checkWatchlistAvailability, availabilityRadarInputSchema, availabilityRadarSummary } from "./availability-radar";
+
 interface Env {
   TMDB_API_KEY?: string;
   TMDB_BASE_URL?: string;
@@ -765,6 +767,19 @@ function createTMDBServer(env: Env): McpServer {
   );
 
   server.registerTool(
+    "check_watchlist_availability",
+    {
+      description: "Compare regional movie/TV streaming, rental, and purchase listings against a caller-owned snapshot, highlighting new subscription listings without storing personal state",
+      inputSchema: availabilityRadarInputSchema.shape,
+      annotations: READ_ONLY_TOOL,
+    },
+    async (input) => {
+      const result = await checkWatchlistAvailability(env, input);
+      return { ...textResult(availabilityRadarSummary(result)), structuredContent: result };
+    },
+  );
+
+  server.registerTool(
     "build_tv_binge_plan",
     {
       description: "Find TV series within an estimated whole-series time budget, with Ended-only filtering, daily viewing plans, and regional subscription availability",
@@ -1273,7 +1288,7 @@ export default {
       }, { headers: securityHeaders() });
     }
 
-    if (request.method === "OPTIONS" && (url.pathname === "/api/concierge" || url.pathname === "/api/watch-party" || url.pathname === "/api/weekly-trending-languages" || url.pathname === "/api/collection-gap-plan" || url.pathname === "/api/taste-profile" || url.pathname === "/api/person-watch-path" || url.pathname === "/api/release-calendar" || url.pathname === "/api/tv-binge-plan")) {
+    if (request.method === "OPTIONS" && (url.pathname === "/api/concierge" || url.pathname === "/api/watch-party" || url.pathname === "/api/weekly-trending-languages" || url.pathname === "/api/collection-gap-plan" || url.pathname === "/api/taste-profile" || url.pathname === "/api/person-watch-path" || url.pathname === "/api/release-calendar" || url.pathname === "/api/tv-binge-plan" || url.pathname === "/api/availability-radar")) {
       return new Response(null, {
         status: 204,
         headers: {
@@ -1448,6 +1463,17 @@ export default {
             },
           },
         );
+      }
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/availability-radar") {
+      if (!authorized(request, env)) return unauthorizedResponse();
+      try {
+        const result = await checkWatchlistAvailability(env, await request.json());
+        return Response.json(result, { headers: { ...securityHeaders(), "access-control-allow-origin": "*" } });
+      } catch (error) {
+        return Response.json({ error: error instanceof z.ZodError ? "Invalid availability radar inputs or snapshot." : error instanceof Error ? error.message : "Unable to check availability." },
+          { status: error instanceof z.ZodError || error instanceof SyntaxError ? 400 : 500, headers: { ...securityHeaders(), "access-control-allow-origin": "*" } });
       }
     }
 

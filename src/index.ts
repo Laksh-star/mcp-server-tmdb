@@ -31,6 +31,8 @@ import { recommendFromTasteProfile, tasteProfileSummary } from "./taste.js";
 import { z } from "zod";
 import { buildTVBingePlan, tvBingeInputSchema, tvBingePlanSummary } from "./tv-binge.js";
 
+import { checkWatchlistAvailability, availabilityRadarInputSchema, availabilityRadarSummary } from "./availability-radar.js";
+
 // Type definitions
 interface Movie {
   id: number;
@@ -795,6 +797,12 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         },
       },
       {
+        name: "check_watchlist_availability",
+        description: "Compare regional movie/TV streaming, rental, and purchase listings against a caller-owned snapshot, highlighting new subscription listings without storing personal state",
+        inputSchema: z.toJSONSchema(availabilityRadarInputSchema, { io: "input" }) as { type: "object"; properties: Record<string, unknown> },
+        annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+      },
+      {
         name: "build_tv_binge_plan",
         description: "Find TV series within an estimated whole-series time budget, with Ended-only filtering, daily viewing plans, and regional subscription availability",
         inputSchema: z.toJSONSchema(tvBingeInputSchema, { io: "input" }) as { type: "object"; properties: Record<string, unknown> },
@@ -1245,6 +1253,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [{ type: "text", text: releaseCalendarWatchlistSummary(result) }],
           isError: false,
         };
+      }
+
+      case "check_watchlist_availability": {
+        const result = await checkWatchlistAvailability({ TMDB_API_KEY, TMDB_BASE_URL }, request.params.arguments || {});
+        return { content: [{ type: "text", text: availabilityRadarSummary(result) }], structuredContent: result, isError: false };
       }
 
       case "build_tv_binge_plan": {
