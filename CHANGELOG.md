@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+### Personal Availability Radar
+
+- Add `check_watchlist_availability` to local/remote MCP and Radar inside My Watchlist.
+- Compare caller-owned per-country baselines by provider ID, with subscription/rental/purchase distinctions and selected-service highlights.
+- Keep failed or missing-country checks out of removal counts and retain the last successful baseline.
+- Refresh the README with a custom banner, navigation/badges, workflow tables, and dated live screenshots. Move detailed commands to `docs/usage.md`.
+- Mask the browser access-token input and align package license metadata with the repository's MIT license.
+
+## Planning Lab — 2026-11-10
+
+Source release: [planning-lab-2026-11-10](https://github.com/Laksh-star/mcp-server-tmdb/releases/tag/planning-lab-2026-11-10).
+
 ### Release Calendar in Planning Lab
 
 - Browse upcoming and recent release windows with country/genre controls.

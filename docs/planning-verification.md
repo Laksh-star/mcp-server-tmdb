@@ -60,9 +60,25 @@ favicon returns 404 independently of the planning flows.
 
 The screenshots in the README were visually inspected and show fixture data.
 
-Live TMDB access was intermittent from this machine, including connection resets from the
-local Worker. A loopback Node forwarder also encountered upstream failures. Live discovery
-and detail responses confirmed TMDB status 3 is Ended, status 4 is Canceled, and type 2 is
-Miniseries; the regression test checks the Ended discovery code. A complete live planning
-smoke run is **not verified**. Run `npm run smoke:tools` with a real TMDB key and the same
-script against the deployed endpoint after release. A merge alone does not redeploy the Worker.
+## Live follow-up on 2026-11-10
+
+After the user merged PR #34, the merged Worker was deployed. The live 25-tool surface
+and all workflow calls passed, including TV binge planning. Live browser checks verified
+calendar and TV results, saved/watched entries after reload, and no JavaScript exceptions.
+README screenshots marked live were captured from that deployment. The local TMDB network
+failures from the earlier fixture session did not prevent the production Worker checks.
+
+The new Availability Radar was verified separately on a version preview: 26 tools and all
+workflow smoke calls passed. Its browser check used The Matrix (movie 603) and Breaking Bad
+(TV 1396), created two US baselines, returned unchanged results on repeat, and preserved
+the baseline after reload. Preview traffic is separate from the merged production version.
+
+The Radar fixture walkthrough additionally verified real deltas, first-check baselines,
+repeat checks without duplicate arrivals, failed lookups retaining baselines, and a 390px
+viewport. The fixture server's `/__fixture/radar-mode?mode=baseline|changed|missing|failed`
+POST control is test-only and does not exist in the production Worker.
+
+Run `npm test` for Radar core/local MCP coverage and `node scripts/planning-http-test.mjs`
+against the fixture Worker for auth, validation, deltas, and remote MCP. Never run the
+fixture assertion script against the production deployment: its title IDs and expected
+provider additions are synthetic.

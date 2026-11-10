@@ -1,0 +1,503 @@
+# Workflow and setup reference
+
+Start with the [README](../README.md) for the feature overview and quick start. This guide keeps the detailed demo commands, client configuration, and deployment notes.
+
+## Tool Surface Smoke
+
+Use this smoke test after adding or merging tools. It verifies the expected MCP tool contract and calls the main workflow tools: `compare_movies`, `find_where_to_watch`, `get_weekend_watchlist`, `plan_watch_party`, `build_franchise_watch_order`, `build_collection_gap_plan`, `recommend_from_taste_profile`, and `build_person_watch_path`.
+
+Local stdio MCP:
+
+```bash
+npm run build
+set -a && source ./.env && set +a && npm run smoke:tools
+```
+
+Cloudflare-hosted MCP:
+
+```bash
+TMDB_MCP_ACCESS_TOKEN=<your-access-token> node scripts/tool-surface-smoke.mjs --mcp-url https://tmdb-mcp.<your-workers-subdomain>.workers.dev/mcp
+```
+
+The script writes a compact verification artifact to:
+
+```text
+examples/tool-surface-smoke.md
+```
+
+To avoid tool bloat, prefer adding workflow tools that combine multiple TMDB calls into a useful user decision. Keep raw endpoint-style tools only when they are broadly reusable primitives.
+
+## Weekly Trending Language Demo
+
+This repo includes a small shareable demo that calls the MCP tool `get_weekly_trending_by_language`, which fetches live TMDB weekly trending movies and groups the current first page by TMDB `original_language`.
+
+Run it against the local stdio MCP server:
+
+```bash
+npm run build
+set -a && source ./.env && set +a && npm run demo:weekly-trending
+```
+
+After deploying this version of the Worker, run the same demo against a remote MCP endpoint:
+
+```bash
+TMDB_MCP_ACCESS_TOKEN=<your-access-token> node scripts/weekly-trending-languages.mjs --mcp-url https://tmdb-mcp.<your-workers-subdomain>.workers.dev/mcp
+```
+
+If the deployment is intentionally authless for personal testing, omit `TMDB_MCP_ACCESS_TOKEN`.
+
+## Weekly Streaming Radar
+
+This repo also includes a script-first weekly radar. It chains existing MCP tools into a Markdown artifact with movie trends, TV trends, language momentum, action-ready picks, family-safe picks, and a taste-profile probe.
+
+Local stdio MCP:
+
+```bash
+npm run build
+set -a && source ./.env && set +a && npm run demo:weekly-radar -- --country US
+```
+
+Cloudflare-hosted MCP:
+
+```bash
+TMDB_MCP_ACCESS_TOKEN=<your-access-token> node scripts/weekly-streaming-radar.mjs --mcp-url https://tmdb-mcp.<your-workers-subdomain>.workers.dev/mcp --country US
+```
+
+The script writes:
+
+```text
+examples/weekly-streaming-radar.md
+```
+
+## Release Calendar Watchlist
+
+The release calendar is available as the MCP tool `build_release_calendar_watchlist`. The demo script calls that tool and writes a Markdown artifact for release-window scanning, watch-later candidates, provider-ready picks, and broad-room baselines.
+
+Local stdio MCP:
+
+```bash
+npm run build
+set -a && source ./.env && set +a && npm run demo:release-calendar -- --country US --days 90
+```
+
+Cloudflare-hosted MCP:
+
+```bash
+TMDB_MCP_ACCESS_TOKEN=<your-access-token> node scripts/release-calendar-watchlist.mjs --mcp-url https://tmdb-mcp.<your-workers-subdomain>.workers.dev/mcp --country US --days 90
+```
+
+The script writes:
+
+```text
+examples/release-calendar-watchlist.md
+```
+
+## TV Binge Planner
+
+Ask an MCP client:
+
+```text
+Find ended mystery series I can finish in 12 hours, available on Netflix in India.
+Plan for 120 minutes of viewing per day.
+```
+
+`build_tv_binge_plan` accepts `country`, `language`, `genre`, `maxHours` (number, 1–300),
+`minutesPerDay` (number, 15–720), `completedOnly` (boolean, default true), `services`,
+`minRating` (number, 0–9), `maxResults` (number, 1–8), and `excludeTVIds` (watched TV IDs).
+It is available in local and remote MCP, and in the browser's **Planning Lab → TV Binge Planner**.
+
+Times estimate the whole series from TMDB episode runtimes, or explicitly assume 45 minutes
+per episode when runtimes are missing. Cancelled shows do not count as Ended. Services are
+required subscription matches when provided; rental/purchase availability is separate.
+Series-level provider listings may not cover every season. Discovery checks up to two general pages, one miniseries page,
+and 30 series, so an empty result does not prove no matching show exists.
+
+## Saved Watchlists and Viewing History
+
+Open **Planning Lab → My Watchlist** in the browser app. Save movie/TV results, mark
+entries Watched, and record Liked or Disliked preferences. **Use saved movie tastes**
+loads up to five liked and five disliked movies into the Taste form.
+
+- Data stays in this browser for this site's origin; it is not synced to TMDB or stored on the Worker.
+- Watched and disliked entries are excluded from new solo, watch-party, taste, and TV binge recommendations.
+- Watched movie IDs also populate collection-gap progress. Release calendars and person paths remain browsable guides.
+- Export/import JSON to back up or move your list. Imports merge by media type and TMDB ID, with newer timestamps winning. Invalid files leave the list unchanged.
+- Limits: 2,000 entries and 2 MB per import. Export before clearing site data or changing domains.
+- MCP clients own their history: pass `excludeMovieIds` to `get_weekend_watchlist`, `plan_watch_party`, and `recommend_from_taste_profile`; pass `excludeTVIds` to `build_tv_binge_plan`. These are arrays of numeric TMDB IDs.
+
+The screenshots below use deterministic fixture data, not current TMDB titles or availability.
+
+![TV Binge Planner with fixture data](assets/tv-binge-planner.png)
+
+![Saved watchlist with fixture data](assets/saved-watchlist.png)
+
+For repeatable API/browser verification without a TMDB key, see [planning verification](planning-verification.md).
+
+## Provider Change Monitor
+
+The provider monitor is script-first because it needs persisted state. It calls `find_where_to_watch`, compares the current provider list against a JSON snapshot, and writes a Markdown delta report showing new, removed, unchanged, and missing provider availability.
+
+Local stdio MCP:
+
+```bash
+npm run build
+set -a && source ./.env && set +a && npm run demo:provider-monitor -- --country US --titles "The Matrix,Inception" --services "Netflix,Prime Video"
+```
+
+Cloudflare-hosted MCP:
+
+```bash
+TMDB_MCP_ACCESS_TOKEN=<your-access-token> node scripts/provider-change-monitor.mjs --mcp-url https://tmdb-mcp.<your-workers-subdomain>.workers.dev/mcp --country US --titles "The Matrix,Inception" --services "Netflix,Prime Video"
+```
+
+The script writes:
+
+```text
+examples/provider-change-monitor.md
+examples/provider-change-snapshot.json
+```
+
+## Collection Gap Finder
+
+The collection gap finder script now calls the promoted MCP tool `build_collection_gap_plan` and writes a repeatable Markdown completion report with watched entries, missing entries, remaining runtime, provider availability, and a shortest completion path.
+
+Local stdio MCP:
+
+```bash
+npm run build
+set -a && source ./.env && set +a && npm run demo:collection-gaps -- --franchise "The Matrix" --watched "The Matrix" --country US --services "Netflix,Prime Video"
+```
+
+Cloudflare-hosted MCP:
+
+```bash
+TMDB_MCP_ACCESS_TOKEN=<your-access-token> node scripts/collection-gap-finder.mjs --mcp-url https://tmdb-mcp.<your-workers-subdomain>.workers.dev/mcp --franchise "The Matrix" --watched "The Matrix" --country US --services "Netflix,Prime Video"
+```
+
+The script writes:
+
+```text
+examples/collection-gap-finder.md
+```
+
+## Remote MCP on Cloudflare Workers
+
+This repo can also run as a remote MCP server on Cloudflare Workers. The remote server exposes the same TMDB tools at `/mcp` over Streamable HTTP, so Claude, Cowork, Claude Desktop connectors, and other remote-MCP clients can connect to a public URL.
+
+The existing local stdio server remains unchanged for Codex and local Claude Desktop use. The Cloudflare entrypoint is `src/worker.ts`.
+
+The Worker also serves a browser demo at `/`: **Weekend Watch Concierge**. It supports solo picks and Watch Party mode, then builds a ranked movie shortlist using TMDB discovery, trending, now-playing, credits, posters, and watch-provider data. Planning Lab includes Release Calendar, TV Binge Planner, and My Watchlist alongside Gaps, Taste, and Person. The browser app also includes a Help drawer for Cloudflare usage and a Workflow Demos panel with commands for script-first artifacts such as Weekly Streaming Radar, Provider Change Monitor, and Collection Gap Finder.
+
+The browser demo also includes an **MCP tool surface** panel that calls the deployed `/mcp` route, verifies the expected tool contract, and samples `compare_movies`, `find_where_to_watch`, `get_weekend_watchlist`, `plan_watch_party`, `build_franchise_watch_order`, `build_collection_gap_plan`, `recommend_from_taste_profile`, and `build_person_watch_path`.
+
+![Weekend Watch Concierge Workflow Demos panel](assets/weekend-watch-concierge-home.png)
+
+![Weekend Watch Concierge Watch Party mode](assets/weekend-watch-concierge-watch-party.png)
+
+For the complete browser app, deployed Worker, access-token, and MCP handoff, see `docs/weekend-watch-concierge.md`.
+
+### Deploy
+
+1. Log in to Cloudflare:
+   ```bash
+   npx wrangler login
+   ```
+
+2. Store your TMDB key as a Worker secret:
+   ```bash
+   npx wrangler secret put TMDB_API_KEY
+   ```
+
+3. Store an access token as a Worker secret before sharing the deployment:
+   ```bash
+   npx wrangler secret put ACCESS_TOKEN
+   ```
+
+   When `ACCESS_TOKEN` is set, `POST /api/concierge` and `POST /mcp` require:
+   ```text
+   Authorization: Bearer <your-access-token>
+   ```
+
+4. Check the Worker bundle:
+   ```bash
+   npm run worker:dry-run
+   ```
+
+5. Deploy:
+   ```bash
+   npm run worker:deploy
+   ```
+
+Cloudflare will print a URL like:
+
+```text
+https://tmdb-mcp.<your-workers-subdomain>.workers.dev
+```
+
+Use this MCP endpoint in remote clients:
+
+```text
+https://tmdb-mcp.<your-workers-subdomain>.workers.dev/mcp
+```
+
+Use this browser demo URL:
+
+```text
+https://tmdb-mcp.<your-workers-subdomain>.workers.dev/
+```
+
+### Connect from Claude / Cowork
+
+For Claude custom connectors:
+
+1. Open Claude settings: `Customize` -> `Connectors`.
+2. Click `+` -> `Add custom connector`.
+3. Use the deployed Worker MCP URL:
+   ```text
+   https://tmdb-mcp.<your-workers-subdomain>.workers.dev/mcp
+   ```
+4. Enable the connector in a conversation and ask a TMDB question, such as:
+   ```text
+   What movies are trending this week?
+   ```
+
+For Claude Desktop versions or MCP clients that still require a local command, use the `mcp-remote` proxy:
+
+```json
+{
+  "mcpServers": {
+    "tmdb-remote": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://tmdb-mcp.<your-workers-subdomain>.workers.dev/mcp"
+      ]
+    }
+  }
+}
+```
+
+### Security note
+
+If `ACCESS_TOKEN` is not configured, the Worker is authless for easy personal testing. Anyone who has the Worker URL can call the read-only TMDB tools and consume your TMDB API quota. Keep `ACCESS_TOKEN` configured or use Cloudflare Access before sharing this beyond your own accounts.
+
+## Weekend Watch Concierge
+
+Run the offline concierge test:
+
+```bash
+npm test
+```
+
+This builds the TypeScript project, starts a tiny local TMDB-compatible fixture server, and verifies that `createWeekendConcierge` ranks a requested streaming-service match first while respecting the runtime filter. It does not need a TMDB API key.
+
+Run the Worker locally:
+
+```bash
+npm run worker:dev
+```
+
+This syncs local values from `.env` into an untracked `.dev.vars` file so Wrangler can expose `TMDB_API_KEY` to the Worker during local development.
+
+For protected local testing, add `ACCESS_TOKEN` to `.env`. The browser app has an access-token field and the smoke scripts can read `ACCESS_TOKEN` or `TMDB_MCP_ACCESS_TOKEN` from the shell environment.
+
+Open:
+
+```text
+http://127.0.0.1:8787/
+```
+
+Smoke test the concierge API after the local Worker is running:
+
+```bash
+npm run smoke:concierge
+```
+
+Smoke test the remote MCP endpoint and call the agent-facing concierge tool:
+
+```bash
+node scripts/remote-mcp-smoke.mjs http://127.0.0.1:8787/mcp --call-concierge
+```
+
+For a protected deployment:
+
+```bash
+TMDB_MCP_ACCESS_TOKEN=<your-access-token> node scripts/remote-mcp-smoke.mjs https://tmdb-mcp.<your-workers-subdomain>.workers.dev/mcp --call-concierge
+```
+
+Or test a deployed Worker:
+
+```bash
+node scripts/concierge-smoke.mjs https://tmdb-mcp.<your-workers-subdomain>.workers.dev
+```
+
+The app uses:
+
+- `POST /api/concierge` for ranked movie picks
+- `POST /api/collection-gap-plan` for Planning Lab collection gaps
+- `POST /api/taste-profile` for Planning Lab taste-fit recommendations
+- `POST /api/person-watch-path` for Planning Lab person watch paths
+- `GET /health` for deployment health
+- `POST /mcp` for remote MCP clients
+
+Agents can call `get_weekend_watchlist` with:
+
+- `mood`: `crowd`, `thriller`, `thoughtful`, `funny`, `family`, or `mindbend`
+- `country`: watch-provider region, for example `IN` or `US`
+- `language`: original language code, for example `en`, `hi`, `ta`, `te`, or `any`
+- `runtime`: maximum minutes, for example `120`, `150`, or `any`
+- `minRating`: minimum TMDB rating
+- `services`: preferred streaming services
+- `familySafe`: set to `true` to exclude common mature genres when TMDB genre data is available
+
+Agents can call `plan_watch_party` when the decision is for a group. It accepts:
+
+- `moods`: one to three values from `crowd`, `thriller`, `thoughtful`, `funny`, `family`, or `mindbend`
+- `groupSize`: number of people watching
+- `country`, `language`, `runtime`, `minRating`, and `services`: same meaning as the weekend watchlist
+- `avoidTitles`: titles the group has already seen or wants excluded
+- `familySafe`: set to `true` to exclude common mature genres when TMDB genre data is available
+
+Agents can call `build_franchise_watch_order` for a collection or universe guide. It accepts:
+
+- `query`: franchise or collection name, for example `The Matrix`, `Dune`, `Batman`, or `Mission Impossible`
+- `country`: watch-provider region, for example `IN` or `US`
+- `maxMovies`: maximum collection entries to include, from 2 to 20
+
+Agents can call `build_collection_gap_plan` for franchise completion planning. It accepts:
+
+- `query`: franchise or collection name
+- `watchedTitles`: watched titles or TMDB movie IDs
+- `country`: watch-provider region, for example `IN` or `US`
+- `services`: preferred streaming services
+- `maxMovies`: maximum collection entries to include, from 2 to 20
+
+Agents can call `recommend_from_taste_profile` for personalized recommendations. It accepts:
+
+- `likedTitles`: one to five movies the user likes
+- `dislikedTitles`: optional movies the user dislikes or wants to avoid stylistically
+- `country`, `services`, `language`, `runtime`, and `minRating`: filters and watch-now preferences
+- `maxResults`: number of recommendations to return, from 3 to 10
+
+Agents can call `build_person_watch_path` for an actor, director, writer, or crew member. It accepts:
+
+- `name`: person name, for example `Keanu Reeves` or `Christopher Nolan`
+- `country`: watch-provider region, for example `IN` or `US`
+- `services`: preferred streaming services
+- `maxTitles`: number of watch-path entries to return, from 3 to 8
+
+## Cloudflare MCP Demo Workflow
+
+For a concrete end-to-end agent workflow, run the now-playing follow-on demo. It uses the MCP server as a remote client would:
+
+1. `get_now_playing` for current theater discovery in a selected region
+2. `get_movie_details` for the selected title
+3. `get_watch_providers` for watch-now availability
+4. `get_recommendations`, with `get_similar_movies` fallback for very new titles
+5. `get_watch_providers` for follow-on availability checks
+
+Local stdio MCP:
+
+```bash
+npm run build
+set -a && source ./.env && set +a && npm run demo:now-playing -- --region US
+```
+
+Cloudflare-hosted MCP:
+
+```bash
+TMDB_MCP_ACCESS_TOKEN=<your-access-token> node scripts/now-playing-follow-on-demo.mjs --mcp-url https://tmdb-mcp.<your-workers-subdomain>.workers.dev/mcp --region US
+```
+
+The script writes the final artifact here:
+
+```text
+examples/now-playing-follow-on-demo.md
+```
+
+## What `npm run install:local` does
+
+The installer uses the repo-owned launcher at `plugins/tmdb/scripts/run-server.sh`.
+
+For Codex it:
+
+- Registers the launcher as an MCP server
+- Installs a local `TMDB` plugin payload so it appears in the plugin UI
+
+For Claude Desktop it:
+
+- Registers the same launcher as a local MCP server
+
+It updates:
+
+- `~/.codex/config.toml`
+- `~/.codex/.tmp/plugins/.agents/plugins/marketplace.json`
+- `~/.codex/plugins/cache/openai-curated/tmdb/...`
+- `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+The launcher reads `TMDB_API_KEY` from your shell environment or from the repo `.env` file.
+
+## Usage with Claude Desktop
+
+If you prefer manual setup, add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "tmdb-local": {
+      "command": "/full/path/to/mcp-server-tmdb/plugins/tmdb/scripts/run-server.sh",
+      "args": []
+    }
+  }
+}
+```
+
+Restart Claude Desktop after editing the config.
+
+## Usage with Codex
+
+The installer adds these blocks to `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.tmdb_local]
+command = "/full/path/to/mcp-server-tmdb/plugins/tmdb/scripts/run-server.sh"
+
+[plugins."tmdb@openai-curated"]
+enabled = true
+```
+
+Restart Codex after editing the config. In a fresh Codex session, `TMDB` should appear in the plugin list and contribute the `mcp__tmdb__` namespace.
+
+## Validation
+
+Offline smoke test:
+
+```bash
+TMDB_API_KEY=dummy node plugins/tmdb/scripts/smoke-test.mjs
+```
+
+Online smoke test:
+
+```bash
+set -a && source ./.env && set +a && node plugins/tmdb/scripts/smoke-test.mjs --online
+```
+
+## Plugin Docs
+
+For plugin packaging, local install behavior, and Codex-specific notes, see `plugins/tmdb/README.md`.
+
+## Example Prompts
+
+```
+"What's trending in movies this week?"
+"Find me Thriller movies from 2023"
+"Who is Christopher Nolan and what has he directed?"
+"Where can I watch Inception in India?"
+"Get details for movie ID 550 (Fight Club)"
+"Find movies similar to Interstellar"
+"What are the trending TV shows right now?"
+```
+
+## License
+
+MIT
