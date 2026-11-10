@@ -7,6 +7,7 @@
   <a href="https://github.com/Laksh-star/mcp-server-tmdb/network/members"><img src="https://img.shields.io/github/forks/Laksh-star/mcp-server-tmdb?style=flat-square&amp;color=0b6b5d" alt="GitHub forks"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-0b6b5d?style=flat-square" alt="MIT license"></a>
   <a href="https://github.com/Laksh-star/mcp-server-tmdb/actions/workflows/ci.yml"><img src="https://github.com/Laksh-star/mcp-server-tmdb/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI status"></a>
+  <a href="https://github.com/Laksh-star/mcp-server-tmdb/pkgs/container/mcp-server-tmdb"><img src="https://img.shields.io/badge/container-GHCR-0b6b5d?style=flat-square" alt="Public container on GHCR"></a>
   <a href="#tools"><img src="https://img.shields.io/badge/MCP_tools-27-0b6b5d?style=flat-square" alt="27 MCP tools"></a>
 </p>
 
@@ -110,18 +111,17 @@ Use an absolute path to the built entrypoint and provide the key through the cli
 
 ## Docker stdio MCP
 
-Build locally and pass the key at runtime:
+Use the public image for Intel/AMD or ARM64 and pass the key at runtime:
 
 ```bash
-docker build -t mcp-server-tmdb:local .
-docker run --rm -i -e TMDB_API_KEY mcp-server-tmdb:local
+docker run --rm -i -e TMDB_API_KEY ghcr.io/laksh-star/mcp-server-tmdb:watch-planning-2026-11-10
 ```
 
 Set `TMDB_API_KEY` in your terminal/client environment first. The non-root image serves stdio MCP; keep `-i` and omit `-t`. The browser app and remote MCP use Cloudflare, described below.
 
 [Docker client configuration and verification](docs/installation.md#build-the-docker-image) · [Portable Node launcher](docs/installation.md#portable-node-launcher)
 
-[Container releases](docs/releases.md) are built for `linux/amd64` and `linux/arm64` after a published GitHub release passes CI. The first registry image is pending the workflow merge and a new release; local builds work now.
+[Watch Planning & Containers](https://github.com/Laksh-star/mcp-server-tmdb/releases/tag/watch-planning-2026-11-10) is published for `linux/amd64` and `linux/arm64`. Both images passed anonymous pulls, non-root checks, and 27-tool MCP verification. See [container releases](docs/releases.md) for digest pinning and [local builds](docs/installation.md#build-the-docker-image) to build from source.
 
 ## Streaming Service Coverage
 

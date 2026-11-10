@@ -57,6 +57,14 @@ Use an absolute path to Node in `command` if the GUI client's PATH does not incl
 
 ## Build the Docker image
 
+The public image is available without a registry login:
+
+```bash
+docker run --rm -i -e TMDB_API_KEY ghcr.io/laksh-star/mcp-server-tmdb:watch-planning-2026-11-10
+```
+
+It supports Linux amd64 and arm64. See [release verification and digests](container-release-verification.md) for the tested artifact. To build the current source instead, use the commands below.
+
 Docker must be installed and its engine running. From the repository root:
 
 ```bash
@@ -89,7 +97,9 @@ Example MCP client configuration, after building the local image:
 }
 ```
 
-The image runs as the non-root `node` user. Its allowlisted build context includes source/package inputs and excludes local env files, client configs, git history, and artifacts. Credentials are supplied at runtime, not copied into image layers. See [container releases](releases.md) for the CI-gated registry workflow and first-publication status.
+To use the published image in this client configuration, replace `mcp-server-tmdb:local` with `ghcr.io/laksh-star/mcp-server-tmdb:watch-planning-2026-11-10`.
+
+The image runs as the non-root `node` user. Its allowlisted build context includes source/package inputs and excludes local env files, client configs, git history, and artifacts. Credentials are supplied at runtime, not copied into image layers. See [container releases](releases.md) for the CI-gated registry workflow.
 
 ## Container dependency boundary
 
