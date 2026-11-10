@@ -1,0 +1,14 @@
+# Allowlist: local credentials, client configs, git history, and artifacts stay out.
+**
+!Dockerfile
+!.dockerignore
+!package.json
+!package-lock.json
+!tsconfig.json
+!LICENSE
+!src/
+!src/**
+src/**/*.js
+!docker/
+!docker/package.json
+!docker/package-lock.json

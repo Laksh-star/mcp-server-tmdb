@@ -57,6 +57,7 @@ try {
   const requiredTools = [
     "build_tv_binge_plan",
     "check_watchlist_availability",
+    "plan_streaming_coverage",
     "build_person_watch_path",
     "build_franchise_watch_order",
     "build_collection_gap_plan",

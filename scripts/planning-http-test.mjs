@@ -7,7 +7,7 @@ const token = process.env.TMDB_MCP_ACCESS_TOKEN || "fixture-token";
 const post = (route, body, auth = true) => fetch(new URL(route, base), {
   method: "POST", headers: { "content-type": "application/json", ...(auth ? { authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(body),
 });
-for (const route of ["/api/release-calendar", "/api/tv-binge-plan", "/api/availability-radar"]) {
+for (const route of ["/api/release-calendar", "/api/tv-binge-plan", "/api/availability-radar", "/api/streaming-coverage"]) {
   assert.equal((await post(route, {}, false)).status, 401);
   const preflight = await fetch(new URL(route, base), { method: "OPTIONS" });
   assert.equal(preflight.status, 204);
@@ -44,6 +44,12 @@ const delta = await secondRadar.json();
 assert.equal(delta.summary.newlyOnServices, 1);
 assert.deepEqual(delta.entries[0].newOnServices, ["Amazon Prime Video"]);
 await fetch("http://127.0.0.1:8791/__fixture/radar-mode?mode=baseline", { method: "POST" });
+assert.equal((await post("/api/streaming-coverage", { titles: [] })).status, 400);
+const coverage = await post("/api/streaming-coverage", { country: "US", titles, services: ["Netflix"] });
+assert.equal(coverage.status, 200);
+const coverageResult = await coverage.json();
+assert.equal(coverageResult.current.coveredCount, 2);
+assert.equal(coverageResult.suggestion.additions.length, 0);
 const client = new Client({ name: "planning-http-test", version: "1.0.0" });
 try {
   await client.connect(new StreamableHTTPClientTransport(new URL("/mcp", base), { requestInit: { headers: { authorization: `Bearer ${token}` } } }));
@@ -61,6 +67,9 @@ try {
   const radar = await client.callTool({ name: "check_watchlist_availability", arguments: { country: "US", titles } });
   assert.ok(!radar.isError);
   assert.equal(radar.structuredContent.summary.baselines, 2);
+  const coverageTool = await client.callTool({ name: "plan_streaming_coverage", arguments: { country: "US", titles, services: ["Netflix"] } });
+  assert.ok(!coverageTool.isError);
+  assert.equal(coverageTool.structuredContent.current.coveredCount, 2);
   const invalid = await client.callTool({ name: "build_tv_binge_plan", arguments: { maxHours: -1 } });
   assert.equal(invalid.isError, true);
   console.log("Planning HTTP tests passed: auth, CORS, validation, calendar, viewing history, availability deltas, and remote MCP.");

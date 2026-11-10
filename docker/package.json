@@ -1,0 +1,14 @@
+{
+  "name": "tmdb-stdio-runtime",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "license": "MIT",
+  "engines": { "node": ">=22" },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "node-fetch": "3.3.2",
+    "zod": "4.6.7"
+  }
+}

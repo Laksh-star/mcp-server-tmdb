@@ -27,7 +27,10 @@ export function createPlanningFixture() {
     const providerMatch = url.pathname.match(/^\/(movie|tv)\/(\d+)\/watch\/providers$/);
     if (providerMatch) {
       if (radarMode === "failed") { response.writeHead(503); response.end(); return; }
-      const listings = radarMode === "changed" && providerMatch[1] === "movie"
+      const coverageListings = providerMatch[1] === "tv" ? [{ provider_id: 9, provider_name: "Amazon Prime Video" }]
+        : Number(providerMatch[2]) === 102 ? [{ provider_id: 9, provider_name: "Amazon Prime Video" }, { provider_id: 10, provider_name: "Another Service" }]
+        : [{ provider_id: 8, provider_name: "Netflix" }, { provider_id: 9, provider_name: "Amazon Prime Video" }];
+      const listings = radarMode === "coverage" ? { flatrate: coverageListings, rent: [] } : radarMode === "changed" && providerMatch[1] === "movie"
         ? { flatrate: [{ provider_id: 8, provider_name: "Netflix" }, { provider_id: 9, provider_name: "Amazon Prime Video" }], rent: [{ provider_id: 2, provider_name: "Apple TV Store" }] }
         : { flatrate: [{ provider_id: 8, provider_name: "Netflix" }], rent: [] };
       payload = { results: radarMode === "missing" ? {} : {

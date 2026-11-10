@@ -4,6 +4,8 @@ import { watchlistPane, watchlistScript } from "./watchlist-app.js";
 
 import { radarScript } from "./radar-app.js";
 
+import { coverageScript } from "./coverage-app.js";
+
 export function renderConciergeApp(): string {
   return `<!doctype html>
 <html lang="en">
@@ -620,6 +622,13 @@ export function renderConciergeApp(): string {
     .radar-new { font-weight: 700; color: var(--accent); }
     .radar-reset { padding: 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); cursor: pointer; }
     @media (max-width: 600px) { .radar-panel { padding: 12px; } }
+
+    .coverage-table-wrap { overflow-x: auto; }
+    .coverage-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .coverage-table caption { text-align: left; font-weight: 700; padding: 8px 0; }
+    .coverage-table th, .coverage-table td { padding: 10px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+    .coverage-table details { margin-top: 6px; font-weight: 400; }
+    .coverage-table summary { cursor: pointer; color: var(--accent); }
 
     .planning-tabs {
       display: grid;
@@ -1446,6 +1455,7 @@ export function renderConciergeApp(): string {
       "build_release_calendar_watchlist",
       "build_tv_binge_plan",
       "check_watchlist_availability",
+      "plan_streaming_coverage",
       "compare_movies",
       "find_where_to_watch",
       "get_movie_details",
@@ -1756,6 +1766,10 @@ export function renderConciergeApp(): string {
             name: "check_watchlist_availability",
             arguments: { country: "US", titles: [{ id: 603, mediaType: "movie", title: "The Matrix" }] },
           }),
+          client.rpc("tools/call", {
+            name: "plan_streaming_coverage",
+            arguments: { country: "US", titles: [{ id: 603, mediaType: "movie", title: "The Matrix" }, { id: 1396, mediaType: "tv", title: "Breaking Bad" }], services: ["Netflix"], maxAdditionalServices: 2 },
+          }),
         ]);
 
         const sampleData = [
@@ -1770,6 +1784,7 @@ export function renderConciergeApp(): string {
           { name: "build_release_calendar_watchlist", text: textFromToolResult(samples[8]) },
           { name: "build_tv_binge_plan", text: textFromToolResult(samples[9]) },
           { name: "check_watchlist_availability", text: textFromToolResult(samples[10]) },
+          { name: "plan_streaming_coverage", text: textFromToolResult(samples[11]) },
         ];
         renderMcpSmoke(toolNames, sampleData);
         statusEl.textContent = "Done";
@@ -2208,6 +2223,7 @@ export function renderConciergeApp(): string {
     ${planningScript()}
     ${watchlistScript()}
     ${radarScript()}
+    ${coverageScript()}
   </script>
 </body>
 </html>`;

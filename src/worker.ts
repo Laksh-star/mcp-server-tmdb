@@ -15,6 +15,8 @@ import { excludedMovieIdsSchema } from "./viewing-history";
 
 import { checkWatchlistAvailability, availabilityRadarInputSchema, availabilityRadarSummary } from "./availability-radar";
 
+import { planStreamingCoverage, streamingCoverageInputSchema, streamingCoverageSummary } from "./streaming-coverage";
+
 interface Env {
   TMDB_API_KEY?: string;
   TMDB_BASE_URL?: string;
@@ -767,6 +769,19 @@ function createTMDBServer(env: Env): McpServer {
   );
 
   server.registerTool(
+    "plan_streaming_coverage",
+    {
+      description: "Compare subscription-service coverage and overlap for saved movie/TV titles, with current-subscription coverage and greedy service additions; no price claims",
+      inputSchema: streamingCoverageInputSchema.shape,
+      annotations: READ_ONLY_TOOL,
+    },
+    async (input) => {
+      const result = await planStreamingCoverage(env, input);
+      return { ...textResult(streamingCoverageSummary(result)), structuredContent: result };
+    },
+  );
+
+  server.registerTool(
     "check_watchlist_availability",
     {
       description: "Compare regional movie/TV streaming, rental, and purchase listings against a caller-owned snapshot, highlighting new subscription listings without storing personal state",
@@ -1288,7 +1303,7 @@ export default {
       }, { headers: securityHeaders() });
     }
 
-    if (request.method === "OPTIONS" && (url.pathname === "/api/concierge" || url.pathname === "/api/watch-party" || url.pathname === "/api/weekly-trending-languages" || url.pathname === "/api/collection-gap-plan" || url.pathname === "/api/taste-profile" || url.pathname === "/api/person-watch-path" || url.pathname === "/api/release-calendar" || url.pathname === "/api/tv-binge-plan" || url.pathname === "/api/availability-radar")) {
+    if (request.method === "OPTIONS" && (url.pathname === "/api/concierge" || url.pathname === "/api/watch-party" || url.pathname === "/api/weekly-trending-languages" || url.pathname === "/api/collection-gap-plan" || url.pathname === "/api/taste-profile" || url.pathname === "/api/person-watch-path" || url.pathname === "/api/release-calendar" || url.pathname === "/api/tv-binge-plan" || url.pathname === "/api/availability-radar" || url.pathname === "/api/streaming-coverage")) {
       return new Response(null, {
         status: 204,
         headers: {
@@ -1463,6 +1478,17 @@ export default {
             },
           },
         );
+      }
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/streaming-coverage") {
+      if (!authorized(request, env)) return unauthorizedResponse();
+      try {
+        const result = await planStreamingCoverage(env, await request.json());
+        return Response.json(result, { headers: { ...securityHeaders(), "access-control-allow-origin": "*" } });
+      } catch (error) {
+        return Response.json({ error: error instanceof z.ZodError ? "Invalid coverage planner inputs." : error instanceof Error ? error.message : "Unable to compare services." },
+          { status: error instanceof z.ZodError || error instanceof SyntaxError ? 400 : 500, headers: { ...securityHeaders(), "access-control-allow-origin": "*" } });
       }
     }
 

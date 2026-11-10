@@ -24,6 +24,7 @@ const EXPECTED_TOOLS = [
   "build_release_calendar_watchlist",
   "build_tv_binge_plan",
   "check_watchlist_availability",
+  "plan_streaming_coverage",
   "compare_movies",
   "find_where_to_watch",
   "get_movie_details",
@@ -321,6 +322,11 @@ async function main() {
     });
     assertIncludes(radarText, "Personal Availability Radar", "check_watchlist_availability");
 
+    const coverageText = await callToolText(client, "plan_streaming_coverage", {
+      country: "US", titles: [{ id: 603, mediaType: "movie", title: "The Matrix" }, { id: 1396, mediaType: "tv", title: "Breaking Bad" }], services: ["Netflix"], maxAdditionalServices: 2,
+    });
+    assertIncludes(coverageText, "Streaming Service Coverage", "plan_streaming_coverage");
+
     const generatedAt = new Date().toISOString();
     const artifact = [
       "# TMDB MCP Tool Surface Smoke",
@@ -341,6 +347,10 @@ async function main() {
       "```",
       "",
       "## Workflow Smoke Results",
+      "",
+      "### plan_streaming_coverage",
+      "",
+      fenced(excerpt(coverageText, 20)),
       "",
       "### check_watchlist_availability",
       "",
@@ -392,7 +402,7 @@ async function main() {
     await writeFile(outputPath, artifact);
 
     console.log(`Tool contract OK: ${actualTools.length} tools.`);
-    console.log("Workflow calls OK: compare_movies, find_where_to_watch, get_weekend_watchlist, plan_watch_party, build_franchise_watch_order, build_collection_gap_plan, recommend_from_taste_profile, build_person_watch_path, build_release_calendar_watchlist, build_tv_binge_plan, check_watchlist_availability.");
+    console.log("Workflow calls OK: compare_movies, find_where_to_watch, get_weekend_watchlist, plan_watch_party, build_franchise_watch_order, build_collection_gap_plan, recommend_from_taste_profile, build_person_watch_path, build_release_calendar_watchlist, build_tv_binge_plan, check_watchlist_availability, plan_streaming_coverage.");
     console.log(`Wrote ${outputPath}`);
   } finally {
     await client.close();

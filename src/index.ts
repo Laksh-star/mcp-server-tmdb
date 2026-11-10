@@ -33,6 +33,8 @@ import { buildTVBingePlan, tvBingeInputSchema, tvBingePlanSummary } from "./tv-b
 
 import { checkWatchlistAvailability, availabilityRadarInputSchema, availabilityRadarSummary } from "./availability-radar.js";
 
+import { planStreamingCoverage, streamingCoverageInputSchema, streamingCoverageSummary } from "./streaming-coverage.js";
+
 // Type definitions
 interface Movie {
   id: number;
@@ -797,6 +799,12 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         },
       },
       {
+        name: "plan_streaming_coverage",
+        description: "Compare subscription-service coverage and overlap for saved movie/TV titles, with current-subscription coverage and greedy service additions; no price claims",
+        inputSchema: z.toJSONSchema(streamingCoverageInputSchema, { io: "input" }) as { type: "object"; properties: Record<string, unknown> },
+        annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+      },
+      {
         name: "check_watchlist_availability",
         description: "Compare regional movie/TV streaming, rental, and purchase listings against a caller-owned snapshot, highlighting new subscription listings without storing personal state",
         inputSchema: z.toJSONSchema(availabilityRadarInputSchema, { io: "input" }) as { type: "object"; properties: Record<string, unknown> },
@@ -1253,6 +1261,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [{ type: "text", text: releaseCalendarWatchlistSummary(result) }],
           isError: false,
         };
+      }
+
+      case "plan_streaming_coverage": {
+        const result = await planStreamingCoverage({ TMDB_API_KEY, TMDB_BASE_URL }, request.params.arguments || {});
+        return { content: [{ type: "text", text: streamingCoverageSummary(result) }], structuredContent: result, isError: false };
       }
 
       case "check_watchlist_availability": {
