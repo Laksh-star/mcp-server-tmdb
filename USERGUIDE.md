@@ -102,6 +102,7 @@ If a feature fails those checks, keep it as shared code or a script until it pro
 | `recommend_from_taste_profile` | Recommend from liked and disliked titles | Personalized discovery |
 | `build_person_watch_path` | Find a starter path for an actor/director | Filmography decisions |
 | `build_release_calendar_watchlist` | Track upcoming release-window candidates | Watch-later planning |
+| `plan_streaming_coverage` | Which services cover saved movies/TV? | Subscription coverage, overlap, and greedy additions |
 | `check_watchlist_availability` | What changed on saved movies/TV providers? | Caller-owned baselines and regional listing deltas |
 | `build_tv_binge_plan` | Find TV series that fit a viewing budget | Ended series, time estimates, regional subscriptions |
 | `compare_movies` | Choose between known movie IDs | Side-by-side tradeoffs |
@@ -189,3 +190,23 @@ country resets comparison context. Changing service preferences only changes hig
 `tmdbAvailabilityRadar.v1.<COUNTRY>`, separate from watchlist exports. The UI checks the
 first 50 unwatched, non-disliked saved entries. There is no automatic scheduling or delivery.
 Use the same `check_watchlist_availability` schema for local and remote MCP.
+
+
+## Installation diagnostics and container transport
+
+`npm run doctor` is read-only and redacts credentials. The Node launcher parses local env
+files without executing shell code; the existing shell launcher delegates to it. See
+[installation](docs/installation.md) for precedence and client configuration.
+
+The root Dockerfile builds TypeScript using the project lockfile, then copies compiled code
+into a non-root stdio image with independently locked dependencies in `docker/`. This keeps
+the Cloudflare framework out of the stdio runtime without migrating the Worker stack.
+
+## Service coverage planning
+
+`src/streaming-coverage.ts` uses the same validated availability lookup as Radar but does
+not read or write its snapshots. Provider IDs and media type/ID title keys define coverage.
+Only subscription listings count. The current-service union is compared with each service;
+greedy additions cover the most remaining titles up to the requested limit. Provider IDs
+break ties. Unknown lookups remain separate from confirmed checked data. The browser checks
+the first 50 eligible saved titles; headless clients can supply batches of up to 50.

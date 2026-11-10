@@ -118,3 +118,13 @@ https://tmdb-mcp.<your-workers-subdomain>.workers.dev/mcp
 ```
 
 The remote Worker is separate from this local plugin package. It is authless by default for personal testing, so add OAuth or Cloudflare Access before sharing the URL.
+
+## Installation diagnostics
+
+From the repository root, run `npm run doctor` for read-only checks, or add `-- --online`
+to test TMDB connectivity and credential acceptance. Values are redacted. The doctor does
+not rewrite client files or prove that a GUI client has restarted.
+
+The portable Node launcher is `scripts/run-server.mjs` within this plugin. Existing shell
+launcher configurations remain supported. For Docker stdio setup, env precedence, and
+repair commands, see [installation](../../docs/installation.md).

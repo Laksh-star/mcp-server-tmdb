@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "dist/index.js",
   "scripts": {
-    "test": "npm run build && node scripts/concierge-offline-test.mjs && node scripts/planning-offline-test.mjs && node scripts/radar-offline-test.mjs",
+    "test": "npm run build && node scripts/concierge-offline-test.mjs && node scripts/planning-offline-test.mjs && node scripts/radar-offline-test.mjs && node scripts/coverage-offline-test.mjs && node scripts/doctor-test.mjs",
     "build": "tsc && shx chmod +x dist/*.js",
     "prepare": "npm run build",
     "watch": "tsc --watch",
@@ -19,7 +19,10 @@
     "demo:weekly-radar": "node scripts/weekly-streaming-radar.mjs",
     "demo:release-calendar": "node scripts/release-calendar-watchlist.mjs",
     "demo:provider-monitor": "node scripts/provider-change-monitor.mjs",
-    "demo:collection-gaps": "node scripts/collection-gap-finder.mjs"
+    "demo:collection-gaps": "node scripts/collection-gap-finder.mjs",
+    "doctor": "node scripts/doctor.mjs",
+    "docker:build": "docker build -t mcp-server-tmdb:local .",
+    "smoke:docker": "node scripts/docker-smoke.mjs"
   },
   "keywords": [
     "mcp",
@@ -49,5 +52,8 @@
   "type": "module",
   "bin": {
     "mcp-server-tmdb": "dist/index.js"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

@@ -82,3 +82,10 @@ Run `npm test` for Radar core/local MCP coverage and `node scripts/planning-http
 against the fixture Worker for auth, validation, deltas, and remote MCP. Never run the
 fixture assertion script against the production deployment: its title IDs and expected
 provider additions are synthetic.
+
+## Installation and service coverage follow-up
+
+`npm test` also runs doctor/launcher and subscription-coverage tests. The fixture HTTP test
+checks `plan_streaming_coverage` and `/api/streaming-coverage`. Use the fixture's `coverage`
+mode for an illustrative browser comparison. Full evidence, container verification, and
+remaining root dependency findings are in [installation/coverage verification](install-coverage-verification.md).

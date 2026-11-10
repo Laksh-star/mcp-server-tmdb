@@ -1,0 +1,51 @@
+import assert from "node:assert/strict";
+import {createServer} from "node:http";
+import {once} from "node:events";
+import {Client} from "@modelcontextprotocol/sdk/client/index.js";
+import {StdioClientTransport} from "@modelcontextprotocol/sdk/client/stdio.js";
+import {planStreamingCoverage} from "../dist/streaming-coverage.js";
+const provider=(provider_id,provider_name)=>({provider_id,provider_name});
+const netflix=provider(8,"Netflix"),prime=provider(9,"Amazon Prime Video"),other=provider(10,"Another Service"),ads=provider(15,"Netflix Standard with Ads");
+const streaming={"movie:1":[netflix,prime],"tv:1":[netflix],"movie:2":[prime,other],"movie:3":[other],"movie:4":[],"movie:7":[ads]};
+let requests=0;
+const fixture=createServer((req,res)=>{
+ requests++;
+ const url=new URL(req.url,"http://localhost"),match=url.pathname.match(/^\/(movie|tv)\/(\d+)\/watch\/providers$/);
+ const key=match?.[1]+":"+match?.[2];
+ if(key==="movie:6"){res.writeHead(503);res.end();return;}
+ const region=streaming[key] ? {US:{flatrate:streaming[key],rent:[provider(2,"Apple TV Store")]}} : {};
+ res.writeHead(200,{"content-type":"application/json"});res.end(JSON.stringify({results:region}));
+});
+fixture.listen(0,"127.0.0.1");await once(fixture,"listening");
+const env={TMDB_API_KEY:"fixture-key",TMDB_BASE_URL:`http://127.0.0.1:${fixture.address().port}`};
+const titles=[...Array.from({length:7},(_,i)=>({id:i+1,mediaType:"movie",title:"Movie "+(i+1)})),{id:1,mediaType:"tv",title:"A Series"}];
+let client;
+try{
+ const result=await planStreamingCoverage(env,{titles,country:"US",services:["Netflix"],maxAdditionalServices:2});
+ assert.equal(result.totalTitles,8);assert.equal(result.checkedTitles,6);assert.equal(result.unknownTitles.length,2);
+ assert.equal(result.current.coveredCount,2);assert.equal(result.current.coveragePercent,25);
+ assert.deepEqual(result.suggestion.additions.map(x=>x.id),[10,15]);assert.equal(result.suggestion.coveredCount,5);
+ assert.equal(result.services.find(x=>x.id===9).overlapWithCurrentCount,1);assert.equal(result.services.find(x=>x.id===9).additionalCount,1);
+ assert.equal(result.services.find(x=>x.id===15).alreadySubscribed,false,"Ad-supported variants must stay separate");
+ assert.deepEqual(result.unlistedOnSubscriptions.map(x=>x.id),[4],"Rentals must not count as subscriptions");
+ assert.ok(result.unknownTitles.every(x=>[5,6].includes(x.id)));
+ const zero=await planStreamingCoverage(env,{titles,country:"US",services:["Netflix"],maxAdditionalServices:0});
+ assert.equal(zero.suggestion.additions.length,0);assert.equal(zero.suggestion.coveredCount,2);
+ const exact=await planStreamingCoverage(env,{titles,country:"US",subscribedProviderIds:[9],maxAdditionalServices:0});
+ assert.equal(exact.current.coveredCount,2);
+ const alias=await planStreamingCoverage(env,{titles,country:"US",services:["Prime Video"],maxAdditionalServices:0});
+ assert.equal(alias.current.coveredCount,2);
+ const dedup=await planStreamingCoverage(env,{titles:[titles[0],titles[0],titles[7]],country:"US",maxAdditionalServices:1});
+ assert.equal(dedup.totalTitles,2);assert.equal(dedup.suggestion.additions[0].id,8,"Ties use provider IDs");
+ const unknown=await planStreamingCoverage(env,{titles,country:"IN"});
+ assert.equal(unknown.checkedTitles,0);assert.equal(unknown.unknownTitles.length,8);assert.match(unknown.notes.join(" "),/incomplete/);
+ const unmatched=await planStreamingCoverage(env,{titles,country:"US",services:["Missing service"],subscribedProviderIds:[999]});
+ assert.deepEqual(unmatched.unmatchedServices,["Missing service"]);assert.deepEqual(unmatched.unmatchedProviderIds,[999]);
+ const before=requests;await assert.rejects(planStreamingCoverage(env,{titles,maxAdditionalServices:4}));assert.equal(requests,before);
+ client=new Client({name:"coverage-offline-test",version:"1.0.0"});
+ await client.connect(new StdioClientTransport({command:process.execPath,args:["dist/index.js"],env:{...process.env,...env},stderr:"inherit"}));
+ const list=await client.listTools();assert.deepEqual(list.tools.find(x=>x.name==="plan_streaming_coverage").inputSchema.required,["titles"]);
+ const reply=await client.callTool({name:"plan_streaming_coverage",arguments:{titles,country:"US",services:["Netflix"]}});
+ assert.ok(!reply.isError);assert.equal(reply.structuredContent.current.coveredCount,2);assert.match(reply.content[0].text,/Streaming Service Coverage/);
+ console.log("Coverage offline tests passed: overlap, greedy additions, rental exclusion, unknowns, IDs/variants, limits, and local MCP.");
+}finally{if(client)await client.close();fixture.close();await once(fixture,"close");}

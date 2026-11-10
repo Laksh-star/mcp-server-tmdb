@@ -1,5 +1,7 @@
 import { radarPanel } from "./radar-app.js";
 
+import { coveragePanel } from "./coverage-app.js";
+
 export function watchlistPane(): string {
   return `<div class="planning-pane" data-planning-pane="library" hidden>
     <p>Saved in this browser on this site. Export a backup to move your list or keep it before clearing browser data. Watched and disliked entries are excluded from new movie and TV recommendations.</p>
@@ -11,6 +13,7 @@ export function watchlistPane(): string {
     <p id="library-message" role="status" aria-live="polite"></p>
     <div id="library-output" class="lab-output"></div>
     ${radarPanel()}
+    ${coveragePanel()}
   </div>`;
 }
 
