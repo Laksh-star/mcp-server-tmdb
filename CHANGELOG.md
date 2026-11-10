@@ -2,13 +2,21 @@
 
 ## Unreleased
 
+### Dependency maintenance and release automation
+
+- Upgrade the MCP SDK to 1.32.2, Zod to 4.6.7, and the Cloudflare build toolchain; refresh both direct and transitive locks. Source checkouts now require Node 22.12+.
+- Remove the unused Agents framework and serve stateless remote MCP through the SDK's web-standard transport with JSON responses and per-request cleanup. Preserve all 27 tools and bearer checks, and allow unauthenticated CORS preflight.
+- Add transport regression checks for malformed/oversized requests, batch limits, and concurrent clients.
+- Add GitHub Actions CI on pull requests/main, including Node 22/24, offline tests, audits, Worker fixtures, and a non-root Docker stdio workflow.
+- Add CI-gated GitHub release publishing to GHCR for amd64/arm64, with release/commit tags, provenance, and SBOM. First publication requires the merged workflow and a new release.
+
 ### Installation and coverage
 
 - Add a read-only installation doctor with optional API/Docker checks, JSON output, redacted credentials, and offline MCP discovery.
 - Add a portable Node launcher; retain the shell wrapper and parse env files as data with explicit environment precedence.
 - Add a non-root stdio Docker image, allowlisted build context, and independently locked minimal runtime dependencies.
 - Add `plan_streaming_coverage` to local/remote MCP and My Watchlist, with subscription coverage, overlap, greedy additions, and explicit unknown-data handling.
-- Add coverage, doctor, launcher, HTTP/MCP, and container workflow verification. Root/Worker dependency advisories remain separately documented follow-up work.
+- Add coverage, doctor, launcher, HTTP/MCP, and container workflow verification. The dependency findings at this checkpoint are resolved by the maintenance update above.
 
 ### Personal Availability Radar
 

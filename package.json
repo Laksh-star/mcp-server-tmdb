@@ -22,7 +22,8 @@
     "demo:collection-gaps": "node scripts/collection-gap-finder.mjs",
     "doctor": "node scripts/doctor.mjs",
     "docker:build": "docker build -t mcp-server-tmdb:local .",
-    "smoke:docker": "node scripts/docker-smoke.mjs"
+    "smoke:docker": "node scripts/docker-smoke.mjs",
+    "test:http": "node scripts/http-smoke.mjs"
   },
   "keywords": [
     "mcp",
@@ -36,24 +37,23 @@
   "license": "MIT",
   "description": "Movie and TV discovery, watch planning, and availability radar for MCP clients, with a browser app and Cloudflare Worker transport.",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.29.0",
-    "agents": "^0.11.4",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "node-fetch": "^3.3.2",
-    "zod": "^4.3.6"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20260422.1",
+    "@cloudflare/workers-types": "^5.20261110.1",
     "@types/node": "^22.10.1",
     "@types/node-fetch": "^2.6.12",
-    "shx": "^0.3.4",
+    "shx": "^0.4.0",
     "typescript": "^5.7.2",
-    "wrangler": "^4.84.1"
+    "wrangler": "^4.159.0"
   },
   "type": "module",
   "bin": {
     "mcp-server-tmdb": "dist/index.js"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=22.12.0"
   }
 }

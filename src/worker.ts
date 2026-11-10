@@ -1,6 +1,6 @@
 /// <reference types="@cloudflare/workers-types" />
 
-import { createMcpHandler } from "agents/mcp";
+import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { renderConciergeApp } from "./concierge-app";
@@ -1526,11 +1526,35 @@ export default {
       }
     }
 
-    if (url.pathname === "/mcp" && !authorized(request, env)) {
+    if (url.pathname === "/mcp" && request.method !== "OPTIONS" && !authorized(request, env)) {
       return unauthorizedResponse();
     }
 
+    if (url.pathname !== "/mcp") return new Response("Not found", { status: 404 });
+    if (request.method === "OPTIONS") {
+      return new Response(null, { status: 204, headers: {
+        "access-control-allow-origin": "*",
+        "access-control-allow-methods": "GET, POST, DELETE, OPTIONS",
+        "access-control-allow-headers": "authorization, content-type, mcp-protocol-version, mcp-session-id",
+      } });
+    }
+
+    // Each request owns its server/transport. JSON replies complete before cleanup;
+    // there is no session or SSE stream to retain across Worker invocations.
     const server = createTMDBServer(env);
-    return createMcpHandler(server, { route: "/mcp" })(request, env, ctx);
+    const transport = new WebStandardStreamableHTTPServerTransport({
+      sessionIdGenerator: undefined,
+      enableJsonResponse: true,
+    });
+    try {
+      await server.connect(transport);
+      const response = await transport.handleRequest(request);
+      const headers = new Headers(response.headers);
+      headers.set("access-control-allow-origin", "*");
+      headers.set("cache-control", "no-store");
+      return new Response(response.body, { status: response.status, headers });
+    } finally {
+      await server.close();
+    }
   },
 } satisfies ExportedHandler<Env>;
