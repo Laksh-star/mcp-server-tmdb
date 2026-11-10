@@ -2,6 +2,8 @@ import { planningTabs, planningPanes, planningScript } from "./planning-app.js";
 
 import { watchlistPane, watchlistScript } from "./watchlist-app.js";
 
+import { radarScript } from "./radar-app.js";
+
 export function renderConciergeApp(): string {
   return `<!doctype html>
 <html lang="en">
@@ -611,6 +613,14 @@ export function renderConciergeApp(): string {
     #library-message:empty { display: none; }
     .planning-tab:focus-visible, .watchlist-actions button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
+    .radar-panel { margin-top: 18px; padding: 20px; border: 1px solid var(--line); border-top: 3px solid var(--accent); border-radius: 10px; background: #fffdf8; }
+    .radar-panel h4 { margin: 0; font-size: 19px; }
+    .radar-caption { color: var(--muted); font-size: 13px; }
+    .radar-tag { font-size: 11px; font-weight: 600; color: var(--accent); }
+    .radar-new { font-weight: 700; color: var(--accent); }
+    .radar-reset { padding: 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); cursor: pointer; }
+    @media (max-width: 600px) { .radar-panel { padding: 12px; } }
+
     .planning-tabs {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1168,7 +1178,7 @@ export function renderConciergeApp(): string {
 
         <div class="field">
           <label for="accessToken">Access token</label>
-          <input id="accessToken" name="accessToken" type="text" autocomplete="off" placeholder="Only needed on protected deployments">
+          <input id="accessToken" name="accessToken" type="password" autocomplete="off" placeholder="Only needed on protected deployments">
         </div>
 
         <fieldset>
@@ -1435,6 +1445,7 @@ export function renderConciergeApp(): string {
       "build_franchise_watch_order",
       "build_release_calendar_watchlist",
       "build_tv_binge_plan",
+      "check_watchlist_availability",
       "compare_movies",
       "find_where_to_watch",
       "get_movie_details",
@@ -1741,6 +1752,10 @@ export function renderConciergeApp(): string {
             name: "build_tv_binge_plan",
             arguments: { country: "US", maxHours: 12, minutesPerDay: 120, completedOnly: true },
           }),
+          client.rpc("tools/call", {
+            name: "check_watchlist_availability",
+            arguments: { country: "US", titles: [{ id: 603, mediaType: "movie", title: "The Matrix" }] },
+          }),
         ]);
 
         const sampleData = [
@@ -1754,6 +1769,7 @@ export function renderConciergeApp(): string {
           { name: "build_person_watch_path", text: textFromToolResult(samples[7]) },
           { name: "build_release_calendar_watchlist", text: textFromToolResult(samples[8]) },
           { name: "build_tv_binge_plan", text: textFromToolResult(samples[9]) },
+          { name: "check_watchlist_availability", text: textFromToolResult(samples[10]) },
         ];
         renderMcpSmoke(toolNames, sampleData);
         statusEl.textContent = "Done";
@@ -2191,6 +2207,7 @@ export function renderConciergeApp(): string {
     }
     ${planningScript()}
     ${watchlistScript()}
+    ${radarScript()}
   </script>
 </body>
 </html>`;

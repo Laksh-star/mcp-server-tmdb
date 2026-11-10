@@ -235,3 +235,17 @@ belongs to the browser/site origin; changing domains or clearing site data requi
 a JSON export. Remote MCP never shares or persists a user's personal watchlist.
 
 See [planning verification](planning-verification.md) for fixture setup and test evidence.
+
+
+### Personal Availability Radar
+
+Inside My Watchlist, choose a country and check saved titles. The first successful lookup
+creates a baseline; later checks show observed subscription/rental/purchase changes.
+Selected sidebar services highlight new subscription listings without filtering the baseline.
+Failed requests and missing country data preserve previous observations. The UI checks the
+first 50 unwatched, non-disliked entries. Baselines live in this browser per country and are
+separate from watchlist JSON exports. Checks run manually; no notifications are scheduled.
+
+The equivalent MCP tool is `check_watchlist_availability`. Supply saved movie/TV IDs and
+keep the returned `snapshot` on the client for the next call. The Worker stores no personal
+watchlist or baseline. The browser endpoint is `POST /api/availability-radar`.

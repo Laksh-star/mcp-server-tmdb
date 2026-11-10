@@ -22,7 +22,8 @@ const EXPECTED_TOOLS = [
   "build_collection_gap_plan",
   "build_franchise_watch_order",
   "build_release_calendar_watchlist",
-      "build_tv_binge_plan",
+  "build_tv_binge_plan",
+  "check_watchlist_availability",
   "compare_movies",
   "find_where_to_watch",
   "get_movie_details",
@@ -315,6 +316,11 @@ async function main() {
     });
     assertIncludes(bingeText, "TV Binge Planner", "build_tv_binge_plan");
 
+    const radarText = await callToolText(client, "check_watchlist_availability", {
+      country: "US", titles: [{ id: 603, mediaType: "movie", title: "The Matrix" }], services: ["Netflix"],
+    });
+    assertIncludes(radarText, "Personal Availability Radar", "check_watchlist_availability");
+
     const generatedAt = new Date().toISOString();
     const artifact = [
       "# TMDB MCP Tool Surface Smoke",
@@ -335,6 +341,10 @@ async function main() {
       "```",
       "",
       "## Workflow Smoke Results",
+      "",
+      "### check_watchlist_availability",
+      "",
+      fenced(excerpt(radarText, 20)),
       "",
       "### build_tv_binge_plan",
       "",
@@ -382,7 +392,7 @@ async function main() {
     await writeFile(outputPath, artifact);
 
     console.log(`Tool contract OK: ${actualTools.length} tools.`);
-    console.log("Workflow calls OK: compare_movies, find_where_to_watch, get_weekend_watchlist, plan_watch_party, build_franchise_watch_order, build_collection_gap_plan, recommend_from_taste_profile, build_person_watch_path, build_release_calendar_watchlist.");
+    console.log("Workflow calls OK: compare_movies, find_where_to_watch, get_weekend_watchlist, plan_watch_party, build_franchise_watch_order, build_collection_gap_plan, recommend_from_taste_profile, build_person_watch_path, build_release_calendar_watchlist, build_tv_binge_plan, check_watchlist_availability.");
     console.log(`Wrote ${outputPath}`);
   } finally {
     await client.close();

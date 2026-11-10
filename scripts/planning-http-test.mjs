@@ -7,7 +7,7 @@ const token = process.env.TMDB_MCP_ACCESS_TOKEN || "fixture-token";
 const post = (route, body, auth = true) => fetch(new URL(route, base), {
   method: "POST", headers: { "content-type": "application/json", ...(auth ? { authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(body),
 });
-for (const route of ["/api/release-calendar", "/api/tv-binge-plan"]) {
+for (const route of ["/api/release-calendar", "/api/tv-binge-plan", "/api/availability-radar"]) {
   assert.equal((await post(route, {}, false)).status, 401);
   const preflight = await fetch(new URL(route, base), { method: "OPTIONS" });
   assert.equal(preflight.status, 204);
@@ -30,6 +30,20 @@ assert.ok(calendar.picks.some((pick) => pick.id === 101));
 const watchedMovieResponse = await post("/api/concierge", { country: "US", excludeMovieIds: [101] });
 assert.equal(watchedMovieResponse.status, 200);
 assert.ok((await watchedMovieResponse.json()).picks.every((pick) => pick.id !== 101));
+const titles = [{ id: 101, mediaType: "movie", title: "Neon Case" }, { id: 101, mediaType: "tv", title: "Short Mystery" }];
+await fetch("http://127.0.0.1:8791/__fixture/radar-mode?mode=baseline", { method: "POST" });
+assert.equal((await post("/api/availability-radar", { titles: [] })).status, 400);
+const firstRadar = await post("/api/availability-radar", { country: "US", titles, services: ["Prime Video"] });
+assert.equal(firstRadar.status, 200);
+const baseline = await firstRadar.json();
+assert.equal(baseline.summary.baselines, 2);
+assert.equal(baseline.summary.newlyOnServices, 0);
+await fetch("http://127.0.0.1:8791/__fixture/radar-mode?mode=changed", { method: "POST" });
+const secondRadar = await post("/api/availability-radar", { country: "US", titles, services: ["Prime Video"], previousSnapshot: baseline.snapshot });
+const delta = await secondRadar.json();
+assert.equal(delta.summary.newlyOnServices, 1);
+assert.deepEqual(delta.entries[0].newOnServices, ["Amazon Prime Video"]);
+await fetch("http://127.0.0.1:8791/__fixture/radar-mode?mode=baseline", { method: "POST" });
 const client = new Client({ name: "planning-http-test", version: "1.0.0" });
 try {
   await client.connect(new StreamableHTTPClientTransport(new URL("/mcp", base), { requestInit: { headers: { authorization: `Bearer ${token}` } } }));
@@ -44,7 +58,10 @@ try {
   assert.ok(!result.isError);
   assert.equal(result.structuredContent.picks[0].id, 101);
   assert.match(result.content[0].text, /TV Binge Planner/);
+  const radar = await client.callTool({ name: "check_watchlist_availability", arguments: { country: "US", titles } });
+  assert.ok(!radar.isError);
+  assert.equal(radar.structuredContent.summary.baselines, 2);
   const invalid = await client.callTool({ name: "build_tv_binge_plan", arguments: { maxHours: -1 } });
   assert.equal(invalid.isError, true);
-  console.log("Planning HTTP tests passed: auth, CORS, validation, calendar, viewing history, and remote MCP.");
+  console.log("Planning HTTP tests passed: auth, CORS, validation, calendar, viewing history, availability deltas, and remote MCP.");
 } finally { await client.close(); }

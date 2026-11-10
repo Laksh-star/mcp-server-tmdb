@@ -102,6 +102,7 @@ If a feature fails those checks, keep it as shared code or a script until it pro
 | `recommend_from_taste_profile` | Recommend from liked and disliked titles | Personalized discovery |
 | `build_person_watch_path` | Find a starter path for an actor/director | Filmography decisions |
 | `build_release_calendar_watchlist` | Track upcoming release-window candidates | Watch-later planning |
+| `check_watchlist_availability` | What changed on saved movies/TV providers? | Caller-owned baselines and regional listing deltas |
 | `build_tv_binge_plan` | Find TV series that fit a viewing budget | Ended series, time estimates, regional subscriptions |
 | `compare_movies` | Choose between known movie IDs | Side-by-side tradeoffs |
 | `find_where_to_watch` | Check availability for one or more titles | Actionable provider lookup |
@@ -135,9 +136,9 @@ Recently added:
 Recommended next features, in order:
 
 1. **Provider Monitor Promotion**
-   - Tool: only if recurring deltas become a common direct ask
-   - Output: stable MCP result for provider additions/removals, likely backed by caller-supplied snapshots
-   - Why: persistence belongs outside MCP until the storage boundary is explicit.
+   - Implemented as `check_watchlist_availability` with a caller-supplied snapshot.
+   - The browser keeps per-country baselines in local storage; MCP persists no personal state.
+   - Failed requests and missing country data preserve each title's last successful baseline.
 
 2. **Planning Lab Expansion**
    - Status: partially implemented in the Worker browser app
@@ -174,3 +175,17 @@ http://127.0.0.1:8787/
 ```
 
 If the change is intended for regular users, merge it to `main` and redeploy the Worker. A GitHub merge alone does not update the deployed Cloudflare Worker.
+
+
+## Availability Radar
+
+`src/availability-radar.ts` validates inputs and snapshots, looks up up to 50 movie/TV IDs
+with bounded concurrency, and compares subscription/rental/purchase provider IDs. First
+observations are baselines. A missing regional result or failed request preserves the old
+observation; an explicit empty provider list can record an observed removal. Changing
+country resets comparison context. Changing service preferences only changes highlights.
+
+`src/radar-app.ts` renders Radar inside My Watchlist. Browser snapshots live under
+`tmdbAvailabilityRadar.v1.<COUNTRY>`, separate from watchlist exports. The UI checks the
+first 50 unwatched, non-disliked saved entries. There is no automatic scheduling or delivery.
+Use the same `check_watchlist_availability` schema for local and remote MCP.
