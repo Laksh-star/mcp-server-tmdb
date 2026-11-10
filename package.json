@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "npm run build && node scripts/concierge-offline-test.mjs",
+    "test": "npm run build && node scripts/concierge-offline-test.mjs && node scripts/planning-offline-test.mjs",
     "build": "tsc && shx chmod +x dist/*.js",
     "prepare": "npm run build",
     "watch": "tsc --watch",

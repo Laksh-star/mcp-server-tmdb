@@ -1,3 +1,5 @@
+import { excludedMovieIds } from "./viewing-history.js";
+
 interface Env {
   TMDB_API_KEY?: string;
   TMDB_BASE_URL?: string;
@@ -11,6 +13,7 @@ interface ConciergeInput {
   minRating?: string;
   services?: string[];
   familySafe?: string | boolean;
+  excludeMovieIds?: number[];
 }
 
 interface WatchPartyPlannerInput {
@@ -23,6 +26,7 @@ interface WatchPartyPlannerInput {
   services?: string[];
   avoidTitles?: string[];
   familySafe?: string | boolean;
+  excludeMovieIds?: number[];
 }
 
 interface MovieSummary {
@@ -452,6 +456,7 @@ export async function createWeekendConcierge(
   env: Env,
   rawInput: ConciergeInput,
 ): Promise<ConciergeResult> {
+  const excludedIds = excludedMovieIds(rawInput.excludeMovieIds);
   const country = normalizeCountry(rawInput.country);
   const language = normalizeLanguage(rawInput.language);
   const mood = normalizeMood(rawInput.mood);
@@ -492,7 +497,7 @@ export async function createWeekendConcierge(
     discover.results.slice(0, 10),
     trending.results.slice(0, 8),
     nowPlaying.results.slice(0, 6),
-  ]).slice(0, 18);
+  ]).filter((movie) => !excludedIds.has(movie.id)).slice(0, 18);
 
   const detailedResults = await Promise.allSettled(
     candidates.map((movie) =>
@@ -545,6 +550,7 @@ export async function createWatchPartyPlanner(
   env: Env,
   rawInput: WatchPartyPlannerInput,
 ): Promise<WatchPartyPlanResult> {
+  const excludedIds = excludedMovieIds(rawInput.excludeMovieIds);
   const country = normalizeCountry(rawInput.country);
   const language = normalizeLanguage(rawInput.language);
   const moods = normalizeMoods(rawInput.moods);
@@ -564,6 +570,7 @@ export async function createWatchPartyPlanner(
         runtime,
         minRating,
         services: requestedServices,
+        excludeMovieIds: [...excludedIds],
         familySafe,
       }),
     ),

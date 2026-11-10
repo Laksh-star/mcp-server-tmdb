@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { once } from "node:events";
-import { createWeekendConcierge } from "../dist/concierge.js";
+import { createWeekendConcierge, createWatchPartyPlanner } from "../dist/concierge.js";
 
 const movies = {
   101: {
@@ -198,7 +198,18 @@ try {
     "expected runtime filter to remove titles over 150 minutes",
   );
 
-  console.log("Offline concierge test passed.");
+  const excluded = await createWeekendConcierge(
+    { TMDB_API_KEY: "offline-test-key", TMDB_BASE_URL: `http://127.0.0.1:${address.port}` },
+    { mood: "thriller", country: "IN", excludeMovieIds: [101] },
+  );
+  assert.ok(excluded.picks.length > 0);
+  assert.ok(excluded.picks.every((pick) => pick.id !== 101), "Watched movies must not be returned");
+  const party = await createWatchPartyPlanner(
+    { TMDB_API_KEY: "offline-test-key", TMDB_BASE_URL: `http://127.0.0.1:${address.port}` },
+    { moods: ["crowd", "thriller"], country: "IN", excludeMovieIds: [101] },
+  );
+  assert.ok(party.picks.every((pick) => pick.id !== 101));
+  console.log("Offline concierge test passed, including watched exclusions for solo and party picks.");
   console.log(`Top pick: ${result.picks[0].title} (${result.picks[0].year})`);
 } finally {
   server.close();

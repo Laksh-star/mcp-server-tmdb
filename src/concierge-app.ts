@@ -1,3 +1,7 @@
+import { planningTabs, planningPanes, planningScript } from "./planning-app.js";
+
+import { watchlistPane, watchlistScript } from "./watchlist-app.js";
+
 export function renderConciergeApp(): string {
   return `<!doctype html>
 <html lang="en">
@@ -596,6 +600,16 @@ export function renderConciergeApp(): string {
       gap: 10px;
       align-items: end;
     }
+
+    .watchlist-actions, .library-tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .watchlist-actions { margin-top: 10px; }
+    .watchlist-actions button, .library-import { border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); padding: 8px 12px; cursor: pointer; font: inherit; }
+    .watchlist-actions button:disabled { cursor: default; color: var(--muted); }
+    .watchlist-actions label { display: grid; gap: 4px; font-size: 13px; }
+    .library-import { display: grid; gap: 4px; max-width: 100%; }
+    .library-import input { max-width: 240px; }
+    #library-message:empty { display: none; }
+    .planning-tab:focus-visible, .watchlist-actions button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
     .planning-tabs {
       display: grid;
@@ -1212,12 +1226,14 @@ export function renderConciergeApp(): string {
       <section class="planning-panel" aria-labelledby="planning-heading">
         <div class="planning-head">
           <h3 id="planning-heading">Planning Lab</h3>
-          <p>Turn existing MCP workflows into focused planning views for franchise gaps, taste-fit picks, and person watch paths.</p>
+          <p>Plan movies and series, then save your next watch.</p>
         </div>
-        <div class="planning-tabs" role="tablist" aria-label="Planning Lab workflows">
+        <div class="planning-tabs" role="group" aria-label="Planning Lab workflows">
           <button class="planning-tab" type="button" data-planning-tab="gaps" aria-pressed="true">Gaps</button>
           <button class="planning-tab" type="button" data-planning-tab="taste" aria-pressed="false">Taste</button>
           <button class="planning-tab" type="button" data-planning-tab="person" aria-pressed="false">Person</button>
+          ${planningTabs()}
+          <button class="planning-tab" type="button" data-planning-tab="library" aria-pressed="false">My Watchlist</button>
         </div>
         <div class="planning-pane" data-planning-pane="gaps">
           <form id="collection-gap-form" class="planning-form">
@@ -1302,6 +1318,8 @@ export function renderConciergeApp(): string {
           </form>
           <div id="person-output" class="empty">Enter a person to build a starter watch path from their filmography.</div>
         </div>
+      ${planningPanes()}
+      ${watchlistPane()}
       </section>
 
       <section class="workflow-panel" aria-labelledby="workflow-heading">
@@ -1416,6 +1434,7 @@ export function renderConciergeApp(): string {
       "build_collection_gap_plan",
       "build_franchise_watch_order",
       "build_release_calendar_watchlist",
+      "build_tv_binge_plan",
       "compare_movies",
       "find_where_to_watch",
       "get_movie_details",
@@ -1545,6 +1564,7 @@ export function renderConciergeApp(): string {
         minRating: data.get("minRating"),
         services: data.getAll("services"),
         familySafe: data.get("familySafe") ? "true" : "false",
+        excludeMovieIds: watchedIds("movie"),
       };
       const payload = selectedMode === "party"
         ? {
@@ -1717,6 +1737,10 @@ export function renderConciergeApp(): string {
             name: "build_release_calendar_watchlist",
             arguments: { country: "US", language: "any", genre: "action", days: "90", recentDays: "30", services: ["Netflix", "Prime Video"], minRating: "0", maxResults: "5" },
           }),
+          client.rpc("tools/call", {
+            name: "build_tv_binge_plan",
+            arguments: { country: "US", maxHours: 12, minutesPerDay: 120, completedOnly: true },
+          }),
         ]);
 
         const sampleData = [
@@ -1729,6 +1753,7 @@ export function renderConciergeApp(): string {
           { name: "recommend_from_taste_profile", text: textFromToolResult(samples[6]) },
           { name: "build_person_watch_path", text: textFromToolResult(samples[7]) },
           { name: "build_release_calendar_watchlist", text: textFromToolResult(samples[8]) },
+          { name: "build_tv_binge_plan", text: textFromToolResult(samples[9]) },
         ];
         renderMcpSmoke(toolNames, sampleData);
         statusEl.textContent = "Done";
@@ -1753,10 +1778,7 @@ export function renderConciergeApp(): string {
       const selectedServices = Array.from(form.querySelectorAll('input[name="services"]:checked')).map((item) => item.value);
       const payload = {
         query: String(data.get("query") || "").trim(),
-        watchedTitles: String(data.get("watchedTitles") || "")
-          .split(",")
-          .map((title) => title.trim())
-          .filter(Boolean),
+        watchedTitles: [...csvValues(data.get("watchedTitles")), ...libraryWatchedMovieIds()],
         country: data.get("country"),
         services: selectedServices,
         maxMovies: String(data.get("maxMovies") || "12"),
@@ -1800,6 +1822,7 @@ export function renderConciergeApp(): string {
 
       const selectedServices = selectedPlanningServices();
       const payload = {
+        excludeMovieIds: watchedIds("movie"),
         likedTitles: csvValues(data.get("likedTitles")),
         dislikedTitles: csvValues(data.get("dislikedTitles")),
         country: data.get("country"),
@@ -1998,6 +2021,7 @@ export function renderConciergeApp(): string {
           "<div class=\\"credits\\">" + escapeHtml([director, cast].filter(Boolean).join(" | ")) + "</div>" +
           (providers ? "<div class=\\"providers\\">" + providers + "</div>" : "") +
           "<div class=\\"reasons\\">" + partyFit + reasons + "</div>" +
+          watchlistActions(pick) +
         "</div>" +
       "</article>";
     }
@@ -2076,7 +2100,7 @@ export function renderConciergeApp(): string {
               "<strong>" + escapeHtml(pick.title) + " (" + escapeHtml(pick.year) + ")</strong>" +
               "<span>" + Number(pick.rating || 0).toFixed(1) + "/10 · score " + escapeHtml(pick.score || 0) + " · " + (pick.runtime ? escapeHtml(pick.runtime + " min") : "runtime unknown") + "</span>" +
               "<span>" + escapeHtml((pick.matchReasons || []).slice(0, 3).join(" · ")) + "</span>" +
-              renderProviderChips(pick.providers, []) +
+              renderProviderChips(pick.providers, []) + watchlistActions(pick) +
             "</li>"
           ).join("") + "</ol>"
         : "<div class=\\"trend-empty\\">No recommendations survived the current filters.</div>";
@@ -2095,7 +2119,7 @@ export function renderConciergeApp(): string {
               "<strong>" + escapeHtml(pick.role) + ": " + escapeHtml(pick.title) + " (" + escapeHtml(pick.year) + ")</strong>" +
               "<span>" + Number(pick.rating || 0).toFixed(1) + "/10 · " + (pick.runtime ? escapeHtml(pick.runtime + " min") : "runtime unknown") + " · " + escapeHtml(pick.credit || "credit unknown") + "</span>" +
               "<span>" + escapeHtml(pick.reason || "") + "</span>" +
-              renderProviderChips(pick.providers, []) +
+              renderProviderChips(pick.providers, []) + watchlistActions(pick) +
             "</li>"
           ).join("") + "</ol>"
         : "<div class=\\"trend-empty\\">No eligible credits found.</div>";
@@ -2111,7 +2135,7 @@ export function renderConciergeApp(): string {
             "<li class=\\"gap-item\\">" +
               "<strong>" + escapeHtml(movie.title) + " (" + escapeHtml(movie.year) + ")</strong>" +
               "<span>" + Number(movie.rating || 0).toFixed(1) + "/10 · " + (movie.runtime ? escapeHtml(movie.runtime + " min") : "runtime unknown") + "</span>" +
-              renderGapProviders(movie) +
+              renderGapProviders(movie) + watchlistActions(movie) +
             "</li>"
           ).join("") + "</ol>"
         : "<div class=\\"trend-empty\\">No entries.</div>";
@@ -2165,6 +2189,8 @@ export function renderConciergeApp(): string {
         .replaceAll("\\"", "&quot;")
         .replaceAll("'", "&#039;");
     }
+    ${planningScript()}
+    ${watchlistScript()}
   </script>
 </body>
 </html>`;

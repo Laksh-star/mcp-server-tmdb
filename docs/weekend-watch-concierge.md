@@ -222,3 +222,16 @@ npm run worker:deploy
 - `scripts/sync-dev-vars.mjs`: Syncs `.env` into `.dev.vars` for local Wrangler.
 - `scripts/concierge-smoke.mjs`: API smoke test.
 - `scripts/remote-mcp-smoke.mjs`: MCP endpoint smoke test.
+
+
+## Planning Lab additions
+
+- **Release Calendar**: upcoming/recent windows, country, genre, subscription/rental/purchase distinctions.
+- **TV Binge Planner**: total viewing budget, daily pace, Ended-only filtering, regional subscription matches. Times are labelled estimates; missing runtimes assume 45 minutes per episode.
+- **My Watchlist**: browser-local saved movies and TV, watched state, preferences, JSON import/export, watched exclusions, and saved movie taste loading.
+
+All three use the existing Access token field when the Worker is protected. Watchlist data
+belongs to the browser/site origin; changing domains or clearing site data requires restoring
+a JSON export. Remote MCP never shares or persists a user's personal watchlist.
+
+See [planning verification](planning-verification.md) for fixture setup and test evidence.

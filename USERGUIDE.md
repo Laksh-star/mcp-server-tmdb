@@ -102,8 +102,23 @@ If a feature fails those checks, keep it as shared code or a script until it pro
 | `recommend_from_taste_profile` | Recommend from liked and disliked titles | Personalized discovery |
 | `build_person_watch_path` | Find a starter path for an actor/director | Filmography decisions |
 | `build_release_calendar_watchlist` | Track upcoming release-window candidates | Watch-later planning |
+| `build_tv_binge_plan` | Find TV series that fit a viewing budget | Ended series, time estimates, regional subscriptions |
 | `compare_movies` | Choose between known movie IDs | Side-by-side tradeoffs |
 | `find_where_to_watch` | Check availability for one or more titles | Actionable provider lookup |
+
+## Personal Watch State
+
+The browser stores a versioned watchlist in `localStorage` (`tmdbConciergeWatchlist.v1`).
+It keeps movie and TV IDs separate and supports portable JSON backups. Watch state is
+never saved to the Worker or TMDB account. Multiple tabs receive storage updates.
+
+The browser sends watched/disliked IDs to recommendation workflows. Headless MCP callers
+supply their own `excludeMovieIds` or `excludeTVIds`. `build_collection_gap_plan` continues
+to accept `watchedTitles`, which can contain string movie IDs; the browser merges watched
+movie IDs into that input. Lists are limited to 2,000 items and imports to 2 MB.
+
+Local and remote MCP expose `build_tv_binge_plan` through the same validated shared module.
+The TV tool adds one workflow rather than separate endpoint wrappers for each TV resource.
 
 ## Feature Pipeline
 
@@ -127,12 +142,12 @@ Recommended next features, in order:
 2. **Planning Lab Expansion**
    - Status: partially implemented in the Worker browser app
    - Output: interactive tabs for collection gaps, taste profile, and person path workflows
-   - Next: add release calendar as a Planning Lab tab once the UI contract is clear.
+   - Release Calendar is available as a Planning Lab tab, including recent-release backfill and separate subscription/rental/purchase availability.
 
 3. **Release Calendar Promotion**
    - Status: implemented as `build_release_calendar_watchlist`
    - Output: stable MCP result for release-window watch decisions
-   - Next: consider adding recent-release backfill or saved watchlist state outside MCP.
+   - Recent-release backfill and a browser-local saved watchlist are implemented. MCP stays stateless; clients supply watched-ID exclusions.
 
 ## Verification Checklist
 

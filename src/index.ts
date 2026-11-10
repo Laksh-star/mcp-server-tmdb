@@ -28,6 +28,9 @@ import { buildPersonWatchPath, personWatchPathSummary } from "./person-path.js";
 import { buildReleaseCalendarWatchlist, releaseCalendarWatchlistSummary } from "./release-calendar.js";
 import { recommendFromTasteProfile, tasteProfileSummary } from "./taste.js";
 
+import { z } from "zod";
+import { buildTVBingePlan, tvBingeInputSchema, tvBingePlanSummary } from "./tv-binge.js";
+
 // Type definitions
 interface Movie {
   id: number;
@@ -528,6 +531,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         inputSchema: {
           type: "object",
           properties: {
+            excludeMovieIds: { type: "array", items: { type: "integer", minimum: 1 }, maxItems: 2000,
+              description: "Watched or unwanted TMDB movie IDs to exclude; supplied by the caller" },
             mood: {
               type: "string",
               enum: ["crowd", "thriller", "thoughtful", "funny", "family", "mindbend"],
@@ -568,6 +573,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         inputSchema: {
           type: "object",
           properties: {
+            excludeMovieIds: { type: "array", items: { type: "integer", minimum: 1 }, maxItems: 2000,
+              description: "Watched or unwanted TMDB movie IDs to exclude; supplied by the caller" },
             moods: {
               type: "array",
               items: {
@@ -674,6 +681,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         inputSchema: {
           type: "object",
           properties: {
+            excludeMovieIds: { type: "array", items: { type: "integer", minimum: 1 }, maxItems: 2000,
+              description: "Watched or unwanted TMDB movie IDs to exclude; supplied by the caller" },
             likedTitles: {
               type: "array",
               items: { type: "string" },
@@ -784,6 +793,12 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
           },
         },
+      },
+      {
+        name: "build_tv_binge_plan",
+        description: "Find TV series within an estimated whole-series time budget, with Ended-only filtering, daily viewing plans, and regional subscription availability",
+        inputSchema: z.toJSONSchema(tvBingeInputSchema, { io: "input" }) as { type: "object"; properties: Record<string, unknown> },
+        annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
       },
       {
         name: "search_movies",
@@ -1081,6 +1096,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           },
           {
             mood: request.params.arguments?.mood as string | undefined,
+            excludeMovieIds: request.params.arguments?.excludeMovieIds as number[] | undefined,
             country: request.params.arguments?.country as string | undefined,
             language: request.params.arguments?.language as string | undefined,
             runtime: request.params.arguments?.runtime as string | undefined,
@@ -1105,6 +1121,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           {
             moods: request.params.arguments?.moods as string[] | undefined,
             groupSize: request.params.arguments?.groupSize as string | undefined,
+            excludeMovieIds: request.params.arguments?.excludeMovieIds as number[] | undefined,
             country: request.params.arguments?.country as string | undefined,
             language: request.params.arguments?.language as string | undefined,
             runtime: request.params.arguments?.runtime as string | undefined,
@@ -1170,6 +1187,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           {
             likedTitles: request.params.arguments?.likedTitles as string[] | undefined,
             dislikedTitles: request.params.arguments?.dislikedTitles as string[] | undefined,
+            excludeMovieIds: request.params.arguments?.excludeMovieIds as number[] | undefined,
             country: request.params.arguments?.country as string | undefined,
             services: request.params.arguments?.services as string[] | undefined,
             language: request.params.arguments?.language as string | undefined,
@@ -1227,6 +1245,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [{ type: "text", text: releaseCalendarWatchlistSummary(result) }],
           isError: false,
         };
+      }
+
+      case "build_tv_binge_plan": {
+        const result = await buildTVBingePlan({ TMDB_API_KEY, TMDB_BASE_URL }, request.params.arguments || {});
+        return { content: [{ type: "text", text: tvBingePlanSummary(result) }], structuredContent: result, isError: false };
       }
 
       case "search_movies": {
