@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## Screenward — 2026-11-14
+
+Product rebrand release: [screenward-2026-11-14](https://github.com/Laksh-star/screenward/releases/tag/screenward-2026-11-14).
+
 ### Screenward identity
 
 - Rename the product and repository to Screenward, with a refreshed README banner, browser title/header, plugin display name, and canonical repository links.
