@@ -1,13 +1,13 @@
 <p align="center">
-  <img src="docs/assets/readme-banner.svg" alt="TMDB MCP Server — Find your next great watch" width="100%">
+  <img src="docs/assets/readme-banner.svg" alt="Screenward — Turn what should we watch into a plan" width="100%">
 </p>
 
 <p align="center">
-  <a href="https://github.com/Laksh-star/mcp-server-tmdb/stargazers"><img src="https://img.shields.io/github/stars/Laksh-star/mcp-server-tmdb?style=flat-square&amp;color=0b6b5d" alt="GitHub stars"></a>
-  <a href="https://github.com/Laksh-star/mcp-server-tmdb/network/members"><img src="https://img.shields.io/github/forks/Laksh-star/mcp-server-tmdb?style=flat-square&amp;color=0b6b5d" alt="GitHub forks"></a>
+  <a href="https://github.com/Laksh-star/screenward/stargazers"><img src="https://img.shields.io/github/stars/Laksh-star/screenward?style=flat-square&amp;color=0b6b5d" alt="GitHub stars"></a>
+  <a href="https://github.com/Laksh-star/screenward/network/members"><img src="https://img.shields.io/github/forks/Laksh-star/screenward?style=flat-square&amp;color=0b6b5d" alt="GitHub forks"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-0b6b5d?style=flat-square" alt="MIT license"></a>
-  <a href="https://github.com/Laksh-star/mcp-server-tmdb/actions/workflows/ci.yml"><img src="https://github.com/Laksh-star/mcp-server-tmdb/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI status"></a>
-  <a href="https://github.com/Laksh-star/mcp-server-tmdb/pkgs/container/mcp-server-tmdb"><img src="https://img.shields.io/badge/container-GHCR-0b6b5d?style=flat-square" alt="Public container on GHCR"></a>
+  <a href="https://github.com/Laksh-star/screenward/actions/workflows/ci.yml"><img src="https://github.com/Laksh-star/screenward/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI status"></a>
+  <a href="https://github.com/Laksh-star/screenward/pkgs/container/mcp-server-tmdb"><img src="https://img.shields.io/badge/container-GHCR-0b6b5d?style=flat-square" alt="Public container on GHCR"></a>
   <a href="#tools"><img src="https://img.shields.io/badge/MCP_tools-27-0b6b5d?style=flat-square" alt="27 MCP tools"></a>
 </p>
 
@@ -20,11 +20,13 @@
   <a href="USERGUIDE.md"><b>Architecture</b></a>
 </p>
 
-# TMDB MCP Server
+# Screenward
 
 **Turn “what should we watch?” into a plan.** Discover movies and TV, compare streaming options, plan a group night, finish a franchise, and check when saved titles appear on your services.
 
-Connect an MCP client such as Codex or Claude Desktop, or use the included **Weekend Watch Concierge** browser app. The same shared workflows power local stdio and remote Streamable HTTP MCP.
+Use the **Screenward browser app** or connect an AI assistant such as Codex or Claude Desktop through **27 MCP tools**. The same shared workflows power the browser, local stdio, and remote Streamable HTTP MCP.
+
+*Formerly `mcp-server-tmdb`.* Existing tool names, client identifiers, and the published Docker image address remain supported. See the [rename and compatibility guide](docs/renaming.md) if you already have an installation.
 
 > **New in Planning Lab:** Release Calendar · TV Binge Planner · Saved Watchlists · Personal Availability Radar · Streaming Service Coverage
 
@@ -42,6 +44,12 @@ Connect an MCP client such as Codex or Claude Desktop, or use the included **Wee
 ## See it in action
 
 **Weekend Watch Concierge** — mood, language, runtime, and provider preferences in one view.
+
+Screenward's product name is new; Concierge, Planning Lab, Watch Party, and Radar remain its familiar workflows.
+
+![Screenward browser app with controlled fixture results](docs/assets/screenward-app-fixture.jpg)
+
+Screenward branding captured on **14 November 2026** with synthetic fixture titles and listings. The dated live workflow screenshots below show the earlier branding.
 
 ![Weekend Watch Concierge with live TMDB results](docs/assets/concierge-live.png)
 
@@ -63,8 +71,8 @@ Concierge, calendar, TV, and watchlist screenshots were captured from the deploy
 Use **Node.js 22.12+** and a [TMDB API key](https://www.themoviedb.org/settings/api).
 
 ```bash
-git clone https://github.com/Laksh-star/mcp-server-tmdb.git
-cd mcp-server-tmdb
+git clone https://github.com/Laksh-star/screenward.git
+cd screenward
 npm install
 cp .env.example .env
 ```
@@ -96,7 +104,7 @@ Use an absolute path to the built entrypoint and provide the key through the cli
   "mcpServers": {
     "tmdb": {
       "command": "node",
-      "args": ["/absolute/path/to/mcp-server-tmdb/dist/index.js"],
+      "args": ["/absolute/path/to/screenward/dist/index.js"],
       "env": {
         "TMDB_API_KEY": "your_tmdb_api_key"
       }
@@ -121,7 +129,9 @@ Set `TMDB_API_KEY` in your terminal/client environment first. The non-root image
 
 [Docker client configuration and verification](docs/installation.md#build-the-docker-image) · [Portable Node launcher](docs/installation.md#portable-node-launcher)
 
-[Watch Planning & Containers](https://github.com/Laksh-star/mcp-server-tmdb/releases/tag/watch-planning-2026-11-10) is published for `linux/amd64` and `linux/arm64`. Both images passed anonymous pulls, non-root checks, and 27-tool MCP verification. See [container releases](docs/releases.md) for digest pinning and [local builds](docs/installation.md#build-the-docker-image) to build from source.
+[Watch Planning & Containers](https://github.com/Laksh-star/screenward/releases/tag/watch-planning-2026-11-10) is published for `linux/amd64` and `linux/arm64`. Both images passed anonymous pulls, non-root checks, and 27-tool MCP verification. See [container releases](docs/releases.md) for digest pinning and [local builds](docs/installation.md#build-the-docker-image) to build from source.
+
+The legacy image name is intentional for compatibility. The release workflow publishes the same image under both `ghcr.io/laksh-star/screenward` and `ghcr.io/laksh-star/mcp-server-tmdb`; see [rename details](docs/renaming.md).
 
 ## Streaming Service Coverage
 
@@ -253,4 +263,4 @@ This product uses the TMDB API but is not endorsed or certified by TMDB.
 
 Useful workflow ideas, bug reports, and focused PRs are welcome. Prefer a tool that answers a clear user question over a separate wrapper for every API endpoint. Shared workflows should work in both local and remote MCP; see [architecture and verification](USERGUIDE.md).
 
-**[Report a bug or suggest a workflow](https://github.com/Laksh-star/mcp-server-tmdb/issues/new)** · **[MIT license](LICENSE)**
+**[Report a bug or suggest a workflow](https://github.com/Laksh-star/screenward/issues/new)** · **[MIT license](LICENSE)**

@@ -1,6 +1,6 @@
 ## Plan your next watch, then keep the list
 
-This source release adds three workflows from [PR #34](https://github.com/Laksh-star/mcp-server-tmdb/pull/34):
+This source release adds three workflows from [PR #34](https://github.com/Laksh-star/screenward/pull/34):
 
 - **Release Calendar in Planning Lab** — browse upcoming and recent movies by country, genre, and release window; see subscription, rental, and purchase listings separately.
 - **TV Binge Planner** — find series within an estimated whole-series time budget, with daily viewing pace, Ended-only filtering, and regional subscription matches. Available in the browser and as `build_tv_binge_plan` in local/remote MCP.

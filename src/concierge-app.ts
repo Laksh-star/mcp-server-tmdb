@@ -12,7 +12,8 @@ export function renderConciergeApp(): string {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Weekend Watch Concierge</title>
+  <title>Screenward — Movie &amp; TV watch planning</title>
+  <meta name="description" content="Discover movies and TV, plan your next watch, organise watchlists, and compare streaming options. Screenward includes a browser app and 27 MCP tools.">
   <style>
     :root {
       color-scheme: light;
@@ -73,6 +74,17 @@ export function renderConciergeApp(): string {
       display: flex;
       align-items: center;
       gap: 8px;
+    }
+
+    .brand-copy {
+      min-width: 0;
+    }
+
+    .brand-tagline {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
     }
 
     h1 {
@@ -1101,7 +1113,10 @@ export function renderConciergeApp(): string {
   <main class="shell">
     <aside class="controls">
       <div class="brand">
-        <h1>Weekend Watch Concierge</h1>
+        <div class="brand-copy">
+          <h1>Screenward</h1>
+          <p class="brand-tagline">Find your next watch. Plan the rest.</p>
+        </div>
         <div class="brand-actions">
           <button class="help-button" id="open-help" type="button" aria-controls="help-drawer" aria-expanded="false">Help</button>
           <div id="status" class="status-pill">Ready</div>
@@ -1381,8 +1396,9 @@ export function renderConciergeApp(): string {
     </div>
     <div class="help-body">
       <section class="help-section">
-        <h3>What this is</h3>
-        <p>This Cloudflare Worker is both a browser app and a remote MCP server backed by TMDB data.</p>
+        <h3>About Screenward</h3>
+        <p>Screenward helps you discover movies and TV, organise watchlists, and plan what to watch. Use this browser app or connect an assistant through 27 MCP tools, backed by TMDB data.</p>
+        <p>Formerly mcp-server-tmdb. Existing tools, saved lists, and connection settings remain compatible.</p>
       </section>
       <section class="help-section">
         <h3>Use the app</h3>

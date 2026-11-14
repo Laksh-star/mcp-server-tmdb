@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
-  <title id="title">TMDB plugin icon</title>
+  <title id="title">Screenward plugin icon</title>
   <desc id="desc">A teal rounded square with a stylized film ticket and play button.</desc>
   <rect x="8" y="8" width="112" height="112" rx="24" fill="#0F766E"/>
   <rect x="26" y="34" width="76" height="60" rx="10" fill="#F0FDFA"/>

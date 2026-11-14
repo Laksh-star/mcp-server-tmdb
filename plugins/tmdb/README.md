@@ -1,6 +1,6 @@
-# TMDB Codex Plugin
+# Screenward Codex Plugin
 
-This repo includes a local Codex plugin for the TMDB MCP server.
+This repo includes a local Codex plugin for Screenward, formerly `mcp-server-tmdb`. The plugin ID and directory remain `tmdb` so existing configurations continue to work.
 
 ## What it wires up
 
@@ -87,7 +87,7 @@ TMDB_MCP_ACCESS_TOKEN=<your-access-token> node scripts/weekly-trending-languages
    - `Find thriller movies from 2023`
    - `Where can I watch Inception in India?`
 
-If the install worked, a fresh Codex session should list `TMDB` in the available plugins and expose the plugin namespace `mcp__tmdb__`. You may also still see the direct server namespace `mcp__tmdb_local__`, since the repo launcher is registered separately as a plain MCP server.
+If the install worked, a fresh Codex session should list `Screenward` in the available plugins and expose the existing namespace `mcp__tmdb__`. You may also still see the direct server namespace `mcp__tmdb_local__`, since the repo launcher is registered separately as a plain MCP server. The display name changes after the plugin cache is refreshed through the installer and the client is restarted.
 
 ## Test inside Claude Desktop
 

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
-  <title id="title">TMDB MCP Server — Find your next great watch</title>
-  <desc id="desc">Movie and TV discovery, watch planning, and streaming availability for MCP clients. A dark cinema-inspired banner with a green play button.</desc>
+  <title id="title">Screenward — Turn what should we watch into a plan</title>
+  <desc id="desc">Movie and TV discovery, watch planning, watchlists, and streaming availability for browsers and MCP clients. A dark cinema-inspired banner with a green play button.</desc>
   <defs>
     <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#071b1a"/><stop offset="1" stop-color="#132d30"/></linearGradient>
     <linearGradient id="accent"><stop stop-color="#91f5be"/><stop offset="1" stop-color="#4bd4c4"/></linearGradient>
@@ -10,16 +10,16 @@
   <rect width="1200" height="360" rx="20" fill="url(#grid)"/>
   <path d="M0 354H1200" stroke="url(#accent)" stroke-width="12"/>
   <g font-family="system-ui, -apple-system, Segoe UI, sans-serif">
-    <rect x="52" y="40" width="166" height="28" rx="14" fill="#244d47"/>
-    <text x="68" y="59" fill="#b4f5d7" font-size="12" font-weight="700" letter-spacing="1.5">TMDB MCP SERVER</text>
-    <text x="52" y="137" fill="#f3fff9" font-size="46" font-weight="800" letter-spacing="-1.6">Find your next great watch.</text>
-    <text x="54" y="181" fill="#b4ccc7" font-size="19">Movies. Series. Streaming. One conversation.</text>
+    <rect x="52" y="40" width="294" height="28" rx="14" fill="#244d47"/>
+    <text x="68" y="59" fill="#b4f5d7" font-size="12" font-weight="700" letter-spacing="1.5">MOVIES · TV · WATCH PLANNING</text>
+    <text x="52" y="137" fill="#f3fff9" font-size="66" font-weight="800" letter-spacing="-1.6">Screenward</text>
+    <text x="54" y="181" fill="#b4ccc7" font-size="27">Turn “what should we watch?” into a plan.</text>
     <g fill="#d6ebe5" font-size="13" font-weight="600">
       <rect x="54" y="218" width="158" height="34" rx="7" fill="#21413d"/><text x="72" y="240">Plan a movie night</text>
       <rect x="224" y="218" width="143" height="34" rx="7" fill="#21413d"/><text x="242" y="240">Find a TV binge</text>
       <rect x="379" y="218" width="152" height="34" rx="7" fill="#21413d"/><text x="397" y="240">Track availability</text>
     </g>
-    <text x="54" y="308" fill="#8baea5" font-size="13" letter-spacing="1">LOCAL STDIO  /  REMOTE MCP  /  BROWSER APP</text>
+    <text x="54" y="308" fill="#8baea5" font-size="13" letter-spacing="1">BROWSER APP  /  27 MCP TOOLS  /  SELF-HOSTED</text>
   </g>
   <g transform="translate(930 180)">
     <circle r="120" fill="none" stroke="#73d9b8" stroke-opacity=".12"/>

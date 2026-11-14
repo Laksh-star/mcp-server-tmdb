@@ -1,4 +1,6 @@
-# Installation doctor and Docker
+# Screenward installation doctor and Docker
+
+The project was formerly `mcp-server-tmdb`. Existing checkout folders, launchers, package/CLI names, and client identifiers remain supported. Do not rename your local folder without updating client paths. See the [rename guide](renaming.md).
 
 Use Node.js 22.12+ for a source checkout (the current Wrangler toolchain requires it). The doctor is read-only: it does not change client configuration, install packages, or print credential values.
 
@@ -47,7 +49,7 @@ Example manual client configuration:
   "mcpServers": {
     "tmdb": {
       "command": "node",
-      "args": ["/absolute/path/to/mcp-server-tmdb/plugins/tmdb/scripts/run-server.mjs"]
+      "args": ["/absolute/path/to/screenward/plugins/tmdb/scripts/run-server.mjs"]
     }
   }
 }

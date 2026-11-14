@@ -2,12 +2,19 @@
 
 ## Unreleased
 
+### Screenward identity
+
+- Rename the product and repository to Screenward, with a refreshed README banner, browser title/header, plugin display name, and canonical repository links.
+- Retain the old npm/CLI name, plugin/MCP IDs, tool names, Worker address, env variables, and browser storage keys for existing installations.
+- Guard container publishing by immutable repository ID and publish future images to both Screenward and legacy image names.
+- Add a rename/compatibility guide and a current, explicitly labelled fixture screenshot; retain dated live verification history.
+
 - Refresh the README/install guide with the public image, exact release/digest verification, and a GHCR badge.
 - Pin the Docker publisher actions to releases with native Node 24 runtimes, following the deprecation annotation in the first successful publish run.
 
 ## Watch Planning & Containers — 2026-11-10
 
-Source release and public container: [watch-planning-2026-11-10](https://github.com/Laksh-star/mcp-server-tmdb/releases/tag/watch-planning-2026-11-10).
+Source release and public container: [watch-planning-2026-11-10](https://github.com/Laksh-star/screenward/releases/tag/watch-planning-2026-11-10).
 
 ### Dependency maintenance and release automation
 
@@ -35,7 +42,7 @@ Source release and public container: [watch-planning-2026-11-10](https://github.
 
 ## Planning Lab — 2026-11-10
 
-Source release: [planning-lab-2026-11-10](https://github.com/Laksh-star/mcp-server-tmdb/releases/tag/planning-lab-2026-11-10).
+Source release: [planning-lab-2026-11-10](https://github.com/Laksh-star/screenward/releases/tag/planning-lab-2026-11-10).
 
 ### Release Calendar in Planning Lab
 

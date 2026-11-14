@@ -136,7 +136,7 @@ function buildInstalledPluginPayload() {
       tmdb: {
         command: launcherPath,
         args: [],
-        note: "Local TMDB MCP server launched from the source repo.",
+        note: "Screenward local MCP server (compatible TMDB identifiers).",
       },
     },
   };
@@ -226,7 +226,7 @@ function main() {
   updateCodexConfig();
   updateClaudeConfig();
 
-  console.log("Installed local TMDB Codex plugin and MCP integrations.");
+  console.log("Installed Screenward Codex plugin and compatible TMDB MCP integrations.");
   console.log(`Codex config: ${codexConfigPath}`);
   console.log(`Codex plugin marketplace: ${codexCuratedMarketplacePath}`);
   console.log(`Codex plugin root: ${codexCuratedPluginRoot}`);

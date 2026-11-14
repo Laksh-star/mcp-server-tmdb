@@ -1,7 +1,7 @@
 # Container releases
 
-Published: [Watch Planning & Containers — 10 November 2026](https://github.com/Laksh-star/mcp-server-tmdb/releases/tag/watch-planning-2026-11-10).
-The [public GHCR package](https://github.com/Laksh-star/mcp-server-tmdb/pkgs/container/mcp-server-tmdb)
+Published: [Watch Planning & Containers — 10 November 2026](https://github.com/Laksh-star/screenward/releases/tag/watch-planning-2026-11-10).
+The [public GHCR package](https://github.com/Laksh-star/screenward/pkgs/container/mcp-server-tmdb)
 supports `linux/amd64` and `linux/arm64`. Both architectures passed anonymous pull,
 non-root execution, 27-tool discovery, and a fixture workflow call. See the
 [release verification record](container-release-verification.md) for exact digests.
@@ -13,8 +13,10 @@ non-root execution, 27-tool discovery, and a fixture workflow call. See the
    A dated tag such as `watch-planning-YYYY-MM-DD` works; this workflow does not
    require changing the npm package version or MCP protocol metadata.
 3. Follow `Publish container` in Actions. It reruns CI against the release tag,
-   then builds and pushes `ghcr.io/laksh-star/mcp-server-tmdb` for `linux/amd64`
-   and `linux/arm64` using the repository's `GITHUB_TOKEN`.
+   then builds and pushes identical images to `ghcr.io/laksh-star/screenward`
+   and the compatible `ghcr.io/laksh-star/mcp-server-tmdb` address for `linux/amd64`
+   and `linux/arm64` using the repository's `GITHUB_TOKEN`. The publisher guard uses
+   the immutable repository ID, so a repository rename does not disable publishing.
 4. Check the package's visibility. If needed, set this open-source package to public
    in its package settings, then verify an unauthenticated pull before announcing it.
 5. Pull the release tag, run the stdio smoke below, and record the returned digest
