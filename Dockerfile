@@ -12,8 +12,8 @@ COPY docker/package.json docker/package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts
 
 FROM node:22-bookworm-slim AS runtime
-LABEL org.opencontainers.image.title="TMDB MCP Server" \
-      org.opencontainers.image.source="https://github.com/Laksh-star/mcp-server-tmdb" \
+LABEL org.opencontainers.image.title="Screenward" \
+      org.opencontainers.image.source="https://github.com/Laksh-star/screenward" \
       org.opencontainers.image.licenses="MIT"
 ENV NODE_ENV=production
 WORKDIR /app

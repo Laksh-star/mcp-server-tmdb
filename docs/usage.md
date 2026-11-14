@@ -445,7 +445,7 @@ If you prefer manual setup, add to `~/Library/Application Support/Claude/claude_
 {
   "mcpServers": {
     "tmdb-local": {
-      "command": "/full/path/to/mcp-server-tmdb/plugins/tmdb/scripts/run-server.sh",
+      "command": "/full/path/to/screenward/plugins/tmdb/scripts/run-server.sh",
       "args": []
     }
   }
@@ -460,7 +460,7 @@ The installer adds these blocks to `~/.codex/config.toml`:
 
 ```toml
 [mcp_servers.tmdb_local]
-command = "/full/path/to/mcp-server-tmdb/plugins/tmdb/scripts/run-server.sh"
+command = "/full/path/to/screenward/plugins/tmdb/scripts/run-server.sh"
 
 [plugins."tmdb@openai-curated"]
 enabled = true

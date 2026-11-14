@@ -17,7 +17,8 @@ jobs:
 
   publish:
     needs: verify
-    if: github.repository == 'Laksh-star/mcp-server-tmdb'
+    # The immutable repository ID survives renames and still excludes forks.
+    if: github.repository_id == '901420381'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
@@ -37,7 +38,9 @@ jobs:
       - uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         id: meta
         with:
-          images: ghcr.io/laksh-star/mcp-server-tmdb
+          images: |
+            ghcr.io/laksh-star/screenward
+            ghcr.io/laksh-star/mcp-server-tmdb
           flavor: latest=false
           tags: |
             type=raw,value=${{ github.event.release.tag_name }}

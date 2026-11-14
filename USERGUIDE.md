@@ -1,4 +1,6 @@
-# TMDB MCP User Guide
+# Screenward User Guide
+
+Screenward is the product name for the former `mcp-server-tmdb` project. It combines a browser app with reusable MCP workflows, powered by TMDB data. Existing protocol and installation identifiers remain supported; see the [rename guide](docs/renaming.md).
 
 This repo has two related but separate goals:
 
@@ -16,7 +18,7 @@ flowchart LR
 
   Core --> LocalClients["Local clients\nCodex / Claude Desktop"]
   Worker --> RemoteClients["Remote MCP clients\nClaude / Cowork / custom clients"]
-  Worker --> BrowserApp["Worker browser app\nWeekend Watch Concierge"]
+  Worker --> BrowserApp["Screenward browser app\nConcierge + Planning Lab + Radar"]
 
   Shared["Shared workflow modules\nsrc/concierge.ts\nsrc/franchise.ts"] --> Core
   Shared --> Worker

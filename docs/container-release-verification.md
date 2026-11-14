@@ -1,15 +1,15 @@
 # First container release — 10 November 2026
 
-Release: [watch-planning-2026-11-10](https://github.com/Laksh-star/mcp-server-tmdb/releases/tag/watch-planning-2026-11-10)
+Release: [watch-planning-2026-11-10](https://github.com/Laksh-star/screenward/releases/tag/watch-planning-2026-11-10)
 from merged commit `249190f2bc6653c0a3e23f84230f7d400be694de`.
 
-[Main CI](https://github.com/Laksh-star/mcp-server-tmdb/actions/runs/42800797242)
-passed, then the [release workflow](https://github.com/Laksh-star/mcp-server-tmdb/actions/runs/42801027292)
+[Main CI](https://github.com/Laksh-star/screenward/actions/runs/42800797242)
+passed, then the [release workflow](https://github.com/Laksh-star/screenward/actions/runs/42801027292)
 reran Node 22/24 verification and successfully published both architectures.
 
 ## Published artifact
 
-- Package: [mcp-server-tmdb on GHCR](https://github.com/Laksh-star/mcp-server-tmdb/pkgs/container/mcp-server-tmdb), visibly public at verification time.
+- Package: [mcp-server-tmdb on GHCR](https://github.com/Laksh-star/screenward/pkgs/container/mcp-server-tmdb), visibly public at verification time.
 - Release tag: `ghcr.io/laksh-star/mcp-server-tmdb:watch-planning-2026-11-10`.
 - Commit tag: `sha-249190f2bc6653c0a3e23f84230f7d400be694de`.
 - `latest`, the release tag, and the commit tag all resolved to the same manifest digest when checked.

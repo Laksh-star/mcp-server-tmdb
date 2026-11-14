@@ -1,33 +1,34 @@
 {
   "name": "tmdb",
   "version": "1.0.0",
-  "description": "Repo-local Codex plugin for the TMDB MCP server in this workspace.",
+  "description": "Screenward movie and TV discovery, watch planning, and availability through the compatible local TMDB MCP server.",
   "author": {
     "name": "Laksh-star",
     "url": "https://github.com/Laksh-star"
   },
-  "homepage": "https://github.com/Laksh-star/mcp-server-tmdb",
-  "repository": "https://github.com/Laksh-star/mcp-server-tmdb",
+  "homepage": "https://github.com/Laksh-star/screenward",
+  "repository": "https://github.com/Laksh-star/screenward",
   "license": "MIT",
   "keywords": [
     "tmdb",
     "movies",
     "tv",
     "mcp",
-    "entertainment"
+    "entertainment",
+    "screenward"
   ],
   "mcpServers": "./.mcp.json",
   "interface": {
-    "displayName": "TMDB",
-    "shortDescription": "Movie and TV discovery through the local TMDB MCP server",
-    "longDescription": "Use this workspace plugin to connect Codex to the TMDB MCP server in this repo for movie discovery, TV search, people lookup, recommendations, and watch-provider data.",
+    "displayName": "Screenward",
+    "shortDescription": "Movie and TV discovery, watch planning, and streaming availability",
+    "longDescription": "Use Screenward to discover movies and TV, plan a watch party or TV binge, manage caller-owned watchlist inputs, and compare regional streaming coverage through 27 MCP tools. The plugin ID remains tmdb for compatibility.",
     "developerName": "Laksh-star",
     "category": "Entertainment",
     "capabilities": [
       "Interactive",
       "Read"
     ],
-    "websiteURL": "https://github.com/Laksh-star/mcp-server-tmdb",
+    "websiteURL": "https://github.com/Laksh-star/screenward",
     "defaultPrompt": [
       "What movies are trending this week?",
       "Find sci-fi movies from 2023 rated above 7",

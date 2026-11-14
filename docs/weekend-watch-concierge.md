@@ -1,6 +1,6 @@
 # Weekend Watch Concierge
 
-Weekend Watch Concierge is a Cloudflare Worker app and remote MCP tool built on this repo's TMDB server.
+Weekend Watch Concierge is Screenward's solo and group watch-picking workflow, served by the browser app and remote MCP tools. The project was formerly named `mcp-server-tmdb`; the Worker address and existing tool names remain compatible. See the [rename guide](renaming.md).
 
 It has two user surfaces:
 
@@ -8,6 +8,8 @@ It has two user surfaces:
 - Remote MCP tools: `get_weekend_watchlist`, `plan_watch_party`, `build_franchise_watch_order`, `build_collection_gap_plan`, `recommend_from_taste_profile`, `build_person_watch_path`, and `build_release_calendar_watchlist`, so agents can ask for the same shortlist, group plan, franchise guide, collection gap plan, taste-based recommendations, person watch path, or release-window watchlist through `/mcp`.
 
 ## Screenshots
+
+These historical workflow screenshots show the earlier app title. See the [README](../README.md#see-it-in-action) for the current Screenward branding.
 
 Blank state:
 
